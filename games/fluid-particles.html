@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="color-scheme" content="dark" />
+<title>FLUID // 流体粒子 + 渐变流光</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#05020a; font-family:'Share Tech Mono','Consolas',monospace; cursor:crosshair; }
+  canvas { display:block; touch-action:none; }
+  #scene { position:fixed; inset:0; }
+
+  /* ---- 霓虹 HUD ---- */
+  #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
+  .readout { position:absolute; letter-spacing:2px; text-transform:uppercase; }
+  .readout .lbl { font-size:10px; color:rgba(255,140,220,0.6); }
+  .readout .val { font-size:30px; color:#fff; text-shadow:0 0 12px rgba(255,80,200,0.9), 0 0 28px rgba(120,80,255,0.7); }
+  #count { top:18px; left:20px; }
+  #fps   { top:18px; right:20px; text-align:right; }
+  #mode  { top:78px; left:20px; font-size:12px; color:#7ff; text-shadow:0 0 8px rgba(80,220,255,0.8); letter-spacing:3px; }
+  #hint  { bottom:22px; left:50%; transform:translateX(-50%); font-size:12px; color:rgba(255,150,220,0.55); letter-spacing:2px; white-space:nowrap; }
+  .corner { position:fixed; width:40px; height:40px; z-index:20; border:2px solid rgba(255,90,200,0.7); opacity:.8; filter:drop-shadow(0 0 5px rgba(255,80,200,.6)); }
+  .corner.tl { top:12px; left:12px; border-right:none; border-bottom:none; }
+  .corner.tr { top:12px; right:12px; border-left:none; border-bottom:none; }
+  .corner.bl { bottom:12px; left:12px; border-right:none; border-top:none; }
+  .corner.br { bottom:12px; right:12px; border-left:none; border-top:none; }
+  #flash { position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:8; }
+</style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <div id="flash"></div>
+  <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+
+  <div id="hud">
+    <div class="readout" id="count"><span class="lbl">PARTICLES</span><br><span class="val" id="count-val">0</span></div>
+    <div class="readout" id="fps"><span class="lbl">FPS</span><br><span class="val" id="fps-val">--</span></div>
+    <div id="mode">FLUID FLOW</div>
+    <div id="hint">移动鼠标搅动流体 · 按住左键汇聚黑洞 · 松开引爆冲击波</div>
+  </div>
+
+<script>
+'use strict';
+/* ================================================================
+   FLUID PARTICLES — 流体粒子 + 渐变流光（高级交互粒子系统 Demo）
+   模块：CONFIG / Utils / ObjectPool / SpatialHash / ParticleSystem
+         / Renderer / Input / UI / MainLoop
+   亮点：粒子物理(重力·阻力·碰撞反弹)、3s 彩虹流光轨迹、
+         Bloom 泛光(离屏+模糊)、黑洞汇聚、径向爆炸冲击波、
+         对象池 + 空间哈希(1000+ 粒子 60FPS)
+   ================================================================ */
+
+// ---------------- 1. 可调参数 ----------------
+const CONFIG = {
+  particleCount: 1100,      // 基准粒子数
+  maxParticles:  1500,      // 硬上限（含火花）
+  gravity:       26,        // 全局重力 (px/s²)
+  airDrag:       0.55,      // 空气阻力系数
+  restitution:   0.88,      // 墙体/碰撞反弹恢复系数
+  trailLife:     3.0,       // 轨迹 3 秒后消散（秒）
+  maxTrail:      14,        // 单粒子最大轨迹点数
+  trailStep:     2.0,       // 移动超过该距离才记录轨迹点
+
+  disturbRadius: 270,       // 鼠标扰动半径
+  disturbStrength: 2.4,     // 扰动惯性力强度
+  bhRadius:      430,       // 黑洞引力半径
+  bhStrength:    2600,      // 黑洞径向引力加速度
+  bhSwirl:       3.2,       // 黑洞切向漩涡系数
+  bhAbsorb:      13,        // 黑洞吞噬半径
+  autoDetonateEnergy: 220,  // 汇聚能量达到该值自动引爆
+  detonateRadius: 1200,     // 引爆有效半径
+  detonatePower: 1700,      // 径向爆炸冲量
+
+  flowStrength:  60,        // 环境流体噪声力
+  enemyRatio:    0.22,      // 敌方粒子占比
+  spawnPerSec:   90,        // 每秒补种粒子数
+};
+
+// ---------------- 2. 工具函数 ----------------
+const TAU = Math.PI * 2;
+const rand  = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+const lerp  = (a, b, t) => a + (b - a) * t;
+const hsl   = (h, s, l, a = 1) => `hsla(${h|0},${s}%,${l}%,${a})`;
+const dist2 = (x1, y1, x2, y2) => { const dx = x1 - x2, dy = y1 - y2; return dx * dx + dy * dy; };
+
+// ---------------- 3. 对象池（避免 GC，性能优化核心） ----------------
+class ObjectPool {
+  constructor(factory, cap) { this.factory = factory; this.cap = cap; this.free = []; }
+  acquire() { return this.free.length ? this.free.pop() : this.factory(); }
+  release(o) { if (this.free.length < this.cap) this.free.push(o); }
+}
+
+// ---------------- 4. 粒子对象 ----------------
+let PID = 0;
+function makeParticle() {
+  return {
+    id: 0, active: false,
+    x: 0, y: 0, vx: 0, vy: 0, ax: 0, ay: 0,
+    r: 2, baseR: 2, mass: 1,
+    hue: 300, life: 1, maxLife: 1,
+    isEnemy: false,       // 是否为"敌方"粒子
+    trail: [],            // 轨迹点 {x,y,t}
+    _lastT: 0,            // 上次记录轨迹的时间戳
+  };
+}
+function resetParticle(p, x, y, opts) {
+  p.id = PID++;
+  p.active = true;
+  p.x = x; p.y = y;
+  const sp = rand(40, 140);
+  const a = Math.random() * TAU;
+  p.vx = Math.cos(a) * sp; p.vy = Math.sin(a) * sp;
+  p.ax = p.ay = 0;
+  p.isEnemy = opts.isEnemy;
+  p.hue = p.isEnemy ? rand(0, 40) : rand(250, 360) % 360;   // 敌方偏红，友方偏紫粉青
+  p.baseR = p.r = opts.r;
+  p.mass = p.r * p.r;
+  p.maxLife = p.life = rand(30, 60);
+  p.trail.length = 0;
+  p._lastT = 0;
+  return p;
+}
+
+// ---------------- 5. 空间哈希网格（碰撞检测性能优化） ----------------
+// 把粒子按格子插入哈希表，碰撞时只查询邻近 9 格，避免 O(n²) 全量检测
+class SpatialHash {
+  constructor(cell) { this.cell = cell; this.map = new Map(); }
+  key(cx, cy) { return cx * 73856093 ^ cy * 19349663; }   // 整数哈希散列
+  clear() { this.map.clear(); }
+  insert(p) {
+    const cx = (p.x / this.cell) | 0, cy = (p.y / this.cell) | 0;
+    const k = this.key(cx, cy);
+    let arr = this.map.get(k);
+    if (!arr) { arr = []; this.map.set(k, arr); }
+    arr.push(p);
+  }
+  // 返回以 (x,y) 为中心 3x3 邻域内的所有粒子
+  query(x, y, out) {
+    const cx = (x / this.cell) | 0, cy = (y / this.cell) | 0;
+    out.length = 0;
+    for (let gx = cx - 1; gx <= cx + 1; gx++)
+      for (let gy = cy - 1; gy <= cy + 1; gy++) {
+        const arr = this.map.get(this.key(gx, gy));
+        if (arr) for (let i = 0; i < arr.length; i++) out.push(arr[i]);
+      }
+  }
+}
+
+// ---------------- 6. 粒子系统（物理 + 力场 + 碰撞 + 冲击波） ----------------
+class ParticleSystem {
+  constructor() {
+    this.w = 0; this.h = 0;
+    this.pool = new ObjectPool(makeParticle, CONFIG.maxParticles * 2);
+    this.active = [];          // 活跃粒子（swap-remove 压缩）
+    this.grid = new SpatialHash(24);
+    this.neighbors = [];
+    this.shocks = [];          // 冲击波列表 {x,y,r,maxR,life}
+    this.bh = { x: 0, y: 0, mode: 'flow', energy: 0, glow: 0 };
+    this.flash = 0;            // 全屏闪光强度
+  }
+
+  seed() {                      // 初始铺满粒子
+    for (let i = 0; i < CONFIG.particleCount; i++) this.spawn(true);
+  }
+  spawn(fromEdge) {
+    const p = this.pool.acquire();
+    const x = fromEdge ? rand(0, this.w) : rand(this.w * 0.1, this.w * 0.9);
+    const y = fromEdge ? rand(0, this.h) : rand(this.h * 0.1, this.h * 0.9);
+    resetParticle(p, x, y, {
+      r: Math.random() < 0.9 ? rand(1.5, 3.4) : rand(4, 6),
+      isEnemy: Math.random() < CONFIG.enemyRatio,
+    });
+    this.active.push(p);
+    return p;
+  }
+  kill(i) {                     // 出池（swap-remove 保证数组紧凑，防 GC 抖动）
+    const p = this.active[i];
+    p.active = false; p.trail.length = 0;
+    this.active[i] = this.active[this.active.length - 1];
+    this.active.pop();
+    this.pool.release(p);
+  }
+
+  // ---- 环境流体噪声力：让粒子呈柔和流体漂移 ----
+  flowForce(p, t) {
+    p.ax += Math.sin(p.y * 0.004 + t) * CONFIG.flowStrength;
+    p.ay += Math.cos(p.x * 0.004 + t * 0.8) * CONFIG.flowStrength;
+  }
+
+  // ---- 鼠标力场（扰动 / 黑洞 / 爆炸） ----
+  mouseForce(p, t) {
+    const bh = this.bh;
+    const dx = bh.x - p.x, dy = bh.y - p.y;
+    const d2 = dx * dx + dy * dy;
+    const d = Math.sqrt(d2) + 0.001;
+    const nx = dx / d, ny = dy / d;
+
+    if (bh.mode === 'blackhole') {
+      if (d < CONFIG.bhRadius) {
+        // 径向引力 + 切向漩涡（绕黑洞螺旋汇聚）
+        const pull = CONFIG.bhStrength / (d + 40);
+        p.ax += nx * pull;
+        p.ay += ny * pull;
+        p.ax += -ny * CONFIG.bhSwirl * (1 - d / CONFIG.bhRadius) * 60;
+        p.ay +=  nx * CONFIG.bhSwirl * (1 - d / CONFIG.bhRadius) * 60;
+        // 到达吞噬半径：标记被吞（由外层按索引回收）
+        if (d < CONFIG.bhAbsorb) return true;
+      }
+    } else {
+      // 流动扰动：鼠标移动产生的惯性踢击（对邻近粒子）
+      if (d < CONFIG.disturbRadius && bh.px !== undefined) {
+        const f = (1 - d / CONFIG.disturbRadius) * CONFIG.disturbStrength;
+        p.ax += bh.mvx * f;      // 沿鼠标移动方向施力
+        p.ay += bh.mvy * f;
+        p.ax += -ny * 30 * f;    // 轻微漩涡让流体更灵动
+        p.ay +=  nx * 30 * f;
+      }
+    }
+    return false;
+  }
+
+  absorbAt(i) {                 // 黑洞吞噬：转能量 + 回收粒子（按索引，O(1)）
+    const p = this.active[i];
+    this.bh.energy += 1;
+    this.bh.glow = Math.min(1, this.bh.glow + 0.06);
+    // 吞噬处迸出细小能量火花
+    for (let k = 0; k < 2; k++) this.spawnSpark(p.x, p.y);
+    this.kill(i);
+  }
+
+  spawnSpark(x, y) {            // 微光点（爆炸碎屑）
+    if (this.active.length >= CONFIG.maxParticles) return;
+    const p = this.pool.acquire();
+    resetParticle(p, x, y, { r: rand(0.8, 1.8), isEnemy: false });
+    p.hue = rand(280, 340);
+    const a = Math.random() * TAU, sp = rand(30, 160);
+    p.vx = Math.cos(a) * sp; p.vy = Math.sin(a) * sp;
+    p.maxLife = p.life = rand(0.3, 0.7);
+    this.active.push(p);
+  }
+
+  // ---- 粒子间弹性碰撞（空间哈希加速） ----
+  collide() {
+    const A = this.active, grid = this.grid;
+    grid.clear();
+    for (let i = 0; i < A.length; i++) grid.insert(A[i]);
+    for (let i = 0; i < A.length; i++) {
+      const a = A[i];
+      grid.query(a.x, a.y, this.neighbors);
+      for (let j = 0; j < this.neighbors.length; j++) {
+        const b = this.neighbors[j];
+        if (b.id <= a.id) continue;            // 只处理一次每对
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const rr = a.r + b.r;
+        const d2 = dx * dx + dy * dy;
+        if (d2 >= rr * rr || d2 === 0) continue;
+        const d = Math.sqrt(d2);
+        const nx = dx / d, ny = dy / d;
+        // 位置校正：按质量比例推开，防止相互嵌入
+        const overlap = (rr - d) * 0.5;
+        const mInv = 1 / (a.mass + b.mass);
+        a.x -= nx * overlap * 2 * (b.mass * mInv);
+        a.y -= ny * overlap * 2 * (b.mass * mInv);
+        b.x += nx * overlap * 2 * (a.mass * mInv);
+        b.y += ny * overlap * 2 * (a.mass * mInv);
+        // 沿法线交换速度分量（弹性反弹，带能量衰减）
+        const rel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        if (rel > 0) {
+          const imp = rel * CONFIG.restitution;
+          a.vx += nx * imp * (b.mass * mInv) * 2;
+          a.vy += ny * imp * (b.mass * mInv) * 2;
+          b.vx -= nx * imp * (a.mass * mInv) * 2;
+          b.vy -= ny * imp * (a.mass * mInv) * 2;
+        }
+      }
+    }
+  }
+
+  // ---- 引爆：全屏径向冲击波 + 敌方粉碎 ----
+  detonate(x, y, maxR) {
+    this.shocks.push({ x, y, r: 10, maxR: maxR || Math.hypot(this.w, this.h), life: 1 });
+    this.flash = 1;
+    // 对半径内所有粒子施加径向冲量（逆序遍历以配合索引删除）
+    const A = this.active;
+    for (let i = A.length - 1; i >= 0; i--) {
+      const p = A[i];
+      const dx = p.x - x, dy = p.y - y;
+      const d = Math.sqrt(dx * dx + dy * dy) + 0.001;
+      const nx = dx / d, ny = dy / d;
+      const f = CONFIG.detonatePower * (1 - Math.min(1, d / CONFIG.detonateRadius));
+      p.vx += nx * f; p.vy += ny * f;
+      if (p.isEnemy && d < CONFIG.detonateRadius) this.shatterAt(i);   // 敌方粉碎
+    }
+    this.bh.energy = 0;
+  }
+
+  shatterAt(i) {                // 敌方粒子化为细碎光点（按索引，O(1)）
+    const p = this.active[i];
+    this.kill(i);
+    for (let k = 0; k < 10; k++) this.spawnSpark(p.x, p.y);
+  }
+
+  // ---- 每帧更新 ----
+  update(dt, t) {
+    const A = this.active, bh = this.bh, W = this.w, H = this.h;
+    const dragF = 1 - CONFIG.airDrag * dt;    // 空气阻力（帧率无关）
+
+    // 自动引爆：黑洞汇聚达到极限
+    if (bh.mode === 'blackhole' && bh.energy >= CONFIG.autoDetonateEnergy) {
+      this.detonate(bh.x, bh.y);
+      bh.mode = 'flow'; bh.energy = 0; bh.glow = 0;
+    }
+
+    // 补种：维持基准粒子数
+    if (A.length < CONFIG.particleCount && Math.random() < CONFIG.spawnPerSec * dt) this.spawn(false);
+
+    // 物理积分（力 → 加速度 → 速度 → 位置）
+    for (let i = A.length - 1; i >= 0; i--) {
+      const p = A[i];
+      p.ax = p.ay = 0;
+      this.flowForce(p, t);
+      if (this.mouseForce(p, t)) { this.absorbAt(i); continue; }   // 被黑洞吞噬
+
+      p.vx = (p.vx + p.ax * dt) * dragF;
+      p.vy = (p.vy + p.ay * dt) * dragF + CONFIG.gravity * dt;
+      p.x += p.vx * dt; p.y += p.vy * dt;
+
+      // 墙体反弹（含恢复系数）
+      if (p.x < p.r) { p.x = p.r; p.vx = Math.abs(p.vx) * CONFIG.restitution; }
+      else if (p.x > W - p.r) { p.x = W - p.r; p.vx = -Math.abs(p.vx) * CONFIG.restitution; }
+      if (p.y < p.r) { p.y = p.r; p.vy = Math.abs(p.vy) * CONFIG.restitution; }
+      else if (p.y > H - p.r) { p.y = H - p.r; p.vy = -Math.abs(p.vy) * CONFIG.restitution; }
+
+      // 记录轨迹（限长 + 3 秒老化）
+      const tr = p.trail;
+      const moved = dist2(p.x, p.y, tr.length ? tr[tr.length - 1].x : p.x - 99, tr.length ? tr[tr.length - 1].y : p.y - 99);
+      if (!p._lastT || moved > CONFIG.trailStep * CONFIG.trailStep) {
+        tr.push({ x: p.x, y: p.y, t });
+        p._lastT = t;
+        if (tr.length > CONFIG.maxTrail) tr.shift();
+      }
+      const cutoff = t - CONFIG.trailLife;
+      while (tr.length && tr[0].t < cutoff) tr.shift();   // 3 秒消散
+
+      // 生命周期耗尽或飞出过远 → 回收
+      p.life -= dt;
+      if (p.life <= 0 || p.x < -200 || p.x > W + 200 || p.y < -200 || p.y > H + 200) this.kill(i);
+    }
+
+    // 碰撞检测与反弹
+    this.collide();
+
+    // 冲击波推进：扫过敌方即粉碎
+    for (let s = this.shocks.length - 1; s >= 0; s--) {
+      const sh = this.shocks[s];
+      sh.life -= dt * 1.6;
+      sh.r += (sh.maxR - 10) * 0.16;   // 径向光波扩散
+      for (let i = A.length - 1; i >= 0; i--) {
+        const p = A[i];
+        if (!p.isEnemy) continue;
+        const d = Math.sqrt(dist2(p.x, p.y, sh.x, sh.y));
+        if (Math.abs(d - sh.r) < 30) this.shatterAt(i);   // 波前命中 → 粉碎
+      }
+      if (sh.life <= 0 || sh.r > sh.maxR) this.shocks.splice(s, 1);
+    }
+
+    // 黑洞光环衰减、全屏闪光衰减
+    bh.glow = Math.max(0, bh.glow - dt * 0.5);
+    this.flash = Math.max(0, this.flash - dt * 3);
+  }
+}
+
+// ---------------- 7. 渲染器 ----------------
+class Renderer {
+  constructor() {
+    this.canvas = document.getElementById('scene');
+    this.ctx = this.canvas.getContext('2d');
+    this.bloom = document.createElement('canvas');   // 离屏 Bloom 缓冲
+    this.bctx = this.bloom.getContext('2d');
+    this.BS = 0.33;                                  // 泛光低分辨率缩放
+    this.w = 0; this.h = 0;
+  }
+  resize(w, h) {
+    this.w = w; this.h = h;
+    this.bloom.width  = Math.max(1, (w * this.BS) | 0);
+    this.bloom.height = Math.max(1, (h * this.BS) | 0);
+  }
+
+  // 动态渐变背景（紫→粉→青循环）
+  drawBackground(t) {
+    const c = this.ctx, w = this.w, h = this.h;
+    const ph = (t * 0.05);
+    const g = c.createRadialGradient(w * (0.5 + Math.sin(ph) * 0.25), h * (0.35 + Math.cos(ph * 0.8) * 0.2), h * 0.1,
+                                     w * 0.5, h * 0.5, Math.max(w, h) * 0.85);
+    g.addColorStop(0, hsl(270 + 40 * Math.sin(ph), 75, 34));        // 紫
+    g.addColorStop(0.5, hsl(325 + 25 * Math.sin(ph + 2), 85, 26));  // 粉
+    g.addColorStop(1, hsl(195 + 30 * Math.sin(ph + 4), 70, 16));    // 青
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, h);
+  }
+
+  // 彩虹渐变轨迹：单次描边 + 线性渐变 = 每粒子一条流光
+  drawTrails(sys) {
+    const c = this.ctx;
+    c.globalCompositeOperation = 'lighter';
+    const A = sys.active;
+    for (let i = 0; i < A.length; i++) {
+      const p = A[i], tr = p.trail;
+      if (tr.length < 2) continue;
+      const a = tr[0], b = tr[tr.length - 1];
+      const g = c.createLinearGradient(a.x, a.y, b.x, b.y);
+      // 沿轨迹从尾到头做彩虹色相偏移
+      g.addColorStop(0, hsl(p.hue + 120, 100, 55, 0));
+      g.addColorStop(0.45, hsl(p.hue + 70, 100, 62, 0.35));
+      g.addColorStop(1, hsl(p.hue, 100, 72, 0.9));
+      c.strokeStyle = g;
+      c.lineWidth = p.r * 0.9;
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      c.beginPath();
+      c.moveTo(tr[0].x, tr[0].y);
+      for (let k = 1; k < tr.length; k++) c.lineTo(tr[k].x, tr[k].y);
+      c.stroke();
+    }
+    c.globalCompositeOperation = 'source-over';
+  }
+
+  // Bloom 泛光：粒子画入低分辨率离屏 → 高斯模糊上屏（GPU 加速）
+  drawBloom(sys) {
+    const c = this.ctx, b = this.bctx;
+    const s = this.BS;
+    b.setTransform(1, 0, 0, 1, 0, 0);
+    b.clearRect(0, 0, this.bloom.width, this.bloom.height);
+    b.setTransform(s, 0, 0, s, 0, 0);
+    b.globalCompositeOperation = 'lighter';
+    const A = sys.active;
+    for (let i = 0; i < A.length; i++) {
+      const p = A[i];
+      b.fillStyle = hsl(p.hue, 100, 68, 0.5);
+      b.beginPath(); b.arc(p.x, p.y, p.r * 2.2, 0, TAU); b.fill();
+    }
+    b.globalCompositeOperation = 'source-over';
+    // 上屏（带模糊 → 产生泛光）
+    if ('filter' in c) {
+      c.save();
+      c.filter = 'blur(9px)';
+      c.globalCompositeOperation = 'lighter';
+      c.drawImage(this.bloom, 0, 0, this.w, this.h);
+      c.filter = 'none';
+      c.restore();
+    }
+  }
+
+  // 粒子核心（发光半透明点）
+  drawCores(sys) {
+    const c = this.ctx;
+    c.globalCompositeOperation = 'lighter';
+    const A = sys.active;
+    for (let i = 0; i < A.length; i++) {
+      const p = A[i];
+      c.globalAlpha = 0.85;
+      c.fillStyle = hsl(p.hue, 100, p.isEnemy ? 58 : 72);
+      c.beginPath(); c.arc(p.x, p.y, p.r, 0, TAU); c.fill();
+    }
+    c.globalAlpha = 1;
+    c.globalCompositeOperation = 'source-over';
+  }
+
+  // 冲击波径向光波
+  drawShocks(sys) {
+    const c = this.ctx;
+    c.globalCompositeOperation = 'lighter';
+    for (const sh of sys.shocks) {
+      c.globalAlpha = clamp(sh.life, 0, 1);
+      c.strokeStyle = hsl(200, 100, 70);
+      c.lineWidth = 6 * sh.life + 1;
+      c.beginPath(); c.arc(sh.x, sh.y, sh.r, 0, TAU); c.stroke();
+      c.globalAlpha = clamp(sh.life, 0, 1) * 0.35;
+      c.strokeStyle = hsl(320, 100, 70);
+      c.lineWidth = 26 * sh.life;
+      c.beginPath(); c.arc(sh.x, sh.y, sh.r * 0.9, 0, TAU); c.stroke();
+    }
+    c.globalCompositeOperation = 'source-over';
+    c.globalAlpha = 1;
+  }
+
+  // 指针光环 / 黑洞涡旋
+  drawPointer(sys) {
+    const c = this.ctx, bh = sys.bh;
+    c.globalCompositeOperation = 'lighter';
+    if (bh.mode === 'blackhole') {
+      // 黑洞暗色吸积 + 能量光环
+      const g = c.createRadialGradient(bh.x, bh.y, 0, bh.x, bh.y, CONFIG.bhRadius * 0.7);
+      g.addColorStop(0, 'rgba(10,0,10,0.9)');
+      g.addColorStop(1, 'rgba(20,0,40,0)');
+      c.fillStyle = g;
+      c.beginPath(); c.arc(bh.x, bh.y, CONFIG.bhRadius * 0.7, 0, TAU); c.fill();
+      const rg = bh.glow;
+      c.strokeStyle = hsl(290, 100, 70, rg);
+      c.lineWidth = 3;
+      c.beginPath(); c.arc(bh.x, bh.y, 14 + rg * 30, 0, TAU); c.stroke();
+    } else if (bh.px !== undefined) {
+      // 扰动范围指示
+      c.strokeStyle = 'rgba(150,230,255,0.18)';
+      c.lineWidth = 1;
+      c.beginPath(); c.arc(bh.x, bh.y, CONFIG.disturbRadius, 0, TAU); c.stroke();
+    }
+    c.globalCompositeOperation = 'source-over';
+  }
+
+  // 全屏闪光
+  drawFlash(sys) {
+    if (sys.flash <= 0) return;
+    const f = document.getElementById('flash');
+    f.style.opacity = (sys.flash * 0.7).toFixed(3);
+  }
+}
+
+// ---------------- 8. 输入（鼠标/触摸，统一 Pointer Events） ----------------
+function initInput(sys) {
+  const bh = sys.bh;
+  let lastX = 0, lastY = 0, lastT = 0;
+
+  addEventListener('pointermove', (e) => {
+    const now = performance.now() / 1000;
+    const dt = Math.max(1 / 120, now - lastT);
+    // 记录鼠标移动速度 → 用于流体扰动
+    bh.mvx = (e.clientX - lastX) / dt;
+    bh.mvy = (e.clientY - lastY) / dt;
+    bh.px = lastX; bh.py = lastY;
+    bh.x = lastX = e.clientX;
+    bh.y = lastY = e.clientY;
+    lastT = now;
+  });
+  addEventListener('pointerdown', (e) => {        // 按住 → 黑洞
+    bh.x = e.clientX; bh.y = e.clientY;
+    bh.mode = 'blackhole';
+    document.getElementById('mode').textContent = 'BLACK HOLE // 汇聚中';
+  });
+  addEventListener('pointerup', (e) => {          // 松开 → 径向爆炸
+    if (bh.mode !== 'blackhole') return;
+    bh.x = e.clientX; bh.y = e.clientY;
+    sys.detonate(bh.x, bh.y);
+    bh.mode = 'flow'; bh.energy = 0; bh.glow = 0;
+    document.getElementById('mode').textContent = 'FLUID FLOW';
+  });
+}
+
+// ---------------- 9. UI ----------------
+const UI = {
+  fpsAcc: 0, fpsN: 0,
+  update(dt, sys) {
+    document.getElementById('count-val').textContent = sys.active.length;
+    this.fpsAcc += dt; this.fpsN++;
+    if (this.fpsAcc >= 0.5) {
+      document.getElementById('fps-val').textContent = Math.round(this.fpsN / this.fpsAcc);
+      this.fpsAcc = 0; this.fpsN = 0;
+    }
+  }
+};
+
+// ---------------- 10. 主循环 ----------------
+const sys = new ParticleSystem();
+const renderer = new Renderer();
+initInput(sys);
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = window.innerWidth, H = window.innerHeight;
+  // 画布背衬按 DPR 设置，绘制坐标统一用 CSS 像素（逻辑坐标）
+  renderer.canvas.width  = (W * dpr) | 0;
+  renderer.canvas.height = (H * dpr) | 0;
+  renderer.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  renderer.resize(W, H);
+  sys.w = W; sys.h = H;
+}
+window.addEventListener('resize', resize);
+
+let last = performance.now() / 1000;
+function animate(now) {
+  requestAnimationFrame(animate);
+  const t = now / 1000;
+  const dt = clamp(t - last, 0.001, 0.05);
+  last = t;
+
+  sys.update(dt, t);
+  renderer.drawBackground(t);
+  renderer.drawTrails(sys);
+  renderer.drawBloom(sys);
+  renderer.drawCores(sys);
+  renderer.drawShocks(sys);
+  renderer.drawPointer(sys);
+  renderer.drawFlash(sys);
+  UI.update(dt, sys);
+}
+
+// ---------------- 启动 ----------------
+resize();
+sys.seed();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
