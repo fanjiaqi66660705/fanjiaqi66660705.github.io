@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="color-scheme" content="dark" />
+<title>SUPERNOVA // 手势控制粒子星球</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #ff3b6b;
+    --accent-dim: rgba(255,80,140,0.55);
+    --cyan: #ff9bd0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#000; font-family:'Share Tech Mono','Consolas',monospace; color:var(--accent); }
+  #scene { position:fixed; inset:0; display:block; }
+  canvas { display:block; }
+
+  /* 太空星空背景 */
+  #stars { position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden;
+    background:radial-gradient(ellipse at 50% 35%, rgba(60,10,60,0.55) 0%, rgba(10,0,25,0.55) 45%, #000 100%); }
+  #stars .star { position:absolute; width:2px; height:2px; border-radius:50%; background:#fff;
+    opacity:0; box-shadow:0 0 3px rgba(255,120,200,0.8); }
+  #stars .star.hot { background:#ffd0ea; box-shadow:0 0 5px rgba(255,100,190,1); }
+  #stars .star.bright { background:#fff; box-shadow:0 0 2px rgba(255,160,220,0.9); }
+  @keyframes twinkle { 0%,100%{ opacity:0; } 50%{ opacity:1; } }
+  @media (max-width:720px){ #stars .star { display:none; } }
+
+  /* ---------- HUD 层 ---------- */
+  #hud { position:fixed; inset:0; pointer-events:none; z-index:20; }
+  .panel { position:absolute; letter-spacing:1px; text-transform:uppercase; text-shadow:0 0 6px rgba(255,60,120,0.6); }
+
+  /* 扫描线 */
+  #scanlines { position:fixed; inset:0; z-index:15; pointer-events:none; opacity:.75; transition:opacity .4s;
+    background:repeating-linear-gradient(0deg, rgba(255,90,145,0.055) 0px, rgba(255,90,145,0.055) 1px, transparent 1px, transparent 3px); }
+  #scanlines.tracking { animation:scanline-scroll .5s linear infinite; opacity:1; }
+  @keyframes scanline-scroll { from{ transform:translateY(0);} to{ transform:translateY(3px);} }
+
+  /* 细网格 */
+  #grid { position:fixed; inset:0; z-index:14; pointer-events:none; opacity:.5;
+    background:
+      linear-gradient(rgba(255,90,145,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,90,145,0.06) 1px, transparent 1px);
+    background-size:56px 56px;
+    -webkit-mask-image:radial-gradient(ellipse at center, rgba(0,0,0,0.9) 0%, transparent 75%);
+            mask-image:radial-gradient(ellipse at center, rgba(0,0,0,0.9) 0%, transparent 75%); }
+
+  /* 暗角 */
+  #vignette { position:fixed; inset:0; z-index:13; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.6) 100%); }
+
+  /* 四角括号 */
+  .corner { position:fixed; width:44px; height:44px; z-index:30; border:2px solid var(--accent); opacity:.85; filter:drop-shadow(0 0 4px rgba(255,60,120,0.7)); }
+  .corner.tl { top:14px; left:14px; border-right:none; border-bottom:none; }
+  .corner.tr { top:14px; right:14px; border-left:none; border-bottom:none; }
+  .corner.bl { bottom:14px; left:14px; border-right:none; border-top:none; }
+  .corner.br { bottom:14px; right:14px; border-left:none; border-top:none; }
+
+  /* 左上状态 */
+  #status { top:22px; left:26px; font-size:13px; line-height:1.75; z-index:30; }
+  #status .title { color:#fff; font-size:15px; letter-spacing:3px; text-shadow:0 0 10px rgba(255,90,180,0.9); }
+  #status .title::after { content:'_'; animation:blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity:0; } }
+  #status .sub { color:var(--accent-dim); font-size:11px; }
+  #status .readout { color:var(--cyan); font-size:12px; }
+  #status .readout b { color:#fff; font-weight:normal; }
+
+  /* 顶部跟踪指示 */
+  #tracking { top:22px; left:50%; transform:translateX(-50%); z-index:30; display:flex; align-items:center; gap:10px;
+    border:1px solid var(--accent-dim); padding:6px 16px; font-size:12px; letter-spacing:2px;
+    background:rgba(10,6,2,0.45); color:var(--accent-dim); }
+  #tracking .dot { width:8px; height:8px; border-radius:50%; background:#553016; }
+  #tracking.tracking { color:#fff; border-color:var(--accent); background:rgba(30,12,2,0.6); animation:pulse 1.1s ease-in-out infinite; }
+  #tracking.tracking .dot { background:var(--accent); box-shadow:0 0 10px var(--accent); animation:blink 1.1s steps(1) infinite; }
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
+
+  /* 右上统计 */
+  #stats { top:22px; right:26px; text-align:right; font-size:12px; line-height:1.7; z-index:30; color:var(--cyan); }
+  #stats .lbl { color:var(--accent-dim); font-size:10px; }
+
+  /* 左下手势读数 */
+  #gesture { bottom:22px; left:26px; font-size:13px; letter-spacing:2px; z-index:30; color:#fff; }
+  #gesture .val { color:var(--cyan); }
+
+  /* 底部图例 */
+  #legend { bottom:22px; left:50%; transform:translateX(-50%); z-index:30; font-size:11px; letter-spacing:1px;
+    color:var(--accent-dim); text-align:center; line-height:1.8; }
+  #legend b { color:var(--accent); font-weight:normal; }
+
+  /* 中央准星 */
+  #reticle { top:50%; left:50%; transform:translate(-50%,-50%); width:120px; height:120px; z-index:25; border-radius:50%;
+    border:1px dashed rgba(255,80,150,0.22); transition:border-color .4s, box-shadow .4s;
+    background:
+      radial-gradient(circle, transparent 34%, rgba(255,80,150,0.18) 35%, transparent 38%),
+      conic-gradient(from 0deg,
+        transparent 0deg 8deg, rgba(255,80,150,0.4) 9deg 11deg, transparent 12deg 98deg,
+        rgba(255,80,150,0.4) 99deg 101deg, transparent 102deg 188deg,
+        rgba(255,80,150,0.4) 189deg 191deg, transparent 192deg 278deg,
+        rgba(255,80,150,0.4) 279deg 281deg, transparent 282deg 360deg); }
+  #hud.tracking #reticle { border-color:rgba(255,80,150,0.7); box-shadow:0 0 24px rgba(255,60,120,0.35); }
+
+  /* 实时画面 PiP */
+  #pip { right:22px; bottom:22px; width:170px; height:128px; z-index:30;
+    border:1px solid var(--accent-dim); background:#020202; box-shadow:0 0 18px rgba(0,0,0,0.8); }
+  #pip::before { content:'● LIVE FEED'; position:absolute; top:-18px; left:-1px; font-size:9px; letter-spacing:2px; color:var(--accent-dim); }
+  #pip video { width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:.8; }
+  #pip .scan { position:absolute; inset:0;
+    background:linear-gradient(180deg, transparent 0 45%, rgba(255,60,120,0.25) 50%, transparent 55% 100%);
+    background-size:100% 220%; animation:scan-scroll 2.4s linear infinite; }
+  @keyframes scan-scroll { from{ background-position:0 0; } to{ background-position:0 100%; } }
+
+  @media (max-width:720px){ #legend, #stats { display:none; } #pip { width:120px; height:90px; } }
+</style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <!-- 太空星空 -->
+  <div id="stars"></div>
+
+  <!-- HUD 覆盖层 -->
+  <div id="grid"></div>
+  <div id="vignette"></div>
+  <div id="scanlines"></div>
+  <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+
+  <div id="hud">
+    <div class="panel" id="status">
+      <div class="title">SUPERNOVA CORE</div>
+      <div class="sub">手势控制粒子星球 // WEBGL</div>
+      <div class="readout">CORE&nbsp;:&nbsp;<b id="r-core">--</b></div>
+      <div class="readout">RINGS&nbsp;:&nbsp;<b id="r-rings">--</b></div>
+      <div class="readout">MODE&nbsp;:&nbsp;<b id="r-mode">LOADING AI…</b></div>
+    </div>
+
+    <div class="panel" id="tracking"><span class="dot"></span><span id="track-text">STANDBY // AWAITING SIGNAL</span></div>
+
+    <div class="panel" id="stats">
+      <div class="lbl">RENDER</div>
+      <div id="s-fps">FPS --</div>
+      <div id="s-res">--x--</div>
+    </div>
+
+    <div class="panel" id="gesture">GESTURE&nbsp;:&nbsp;<span class="val" id="g-val">NONE</span></div>
+
+    <div class="panel" id="legend">
+      <b>移动手掌</b> → 环绕旋转&nbsp;&nbsp;|&nbsp;&nbsp;<b>握拳 + 后拉</b> → 超空间退场&nbsp;&nbsp;|&nbsp;&nbsp;<b>张掌 + 前推</b> → 进入核心
+    </div>
+
+    <div id="reticle"></div>
+
+    <div class="panel" id="pip">
+      <video id="cam" playsinline muted autoplay></video>
+      <div class="scan"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // ============================================================
+    //  SUPERNOVA — 手势控制粒子星球
+    //  单文件 WebGL 演示：Three.js + MediaPipe HandLandmarker
+    //  结构：initThree / initParticles / initMediaPipe /
+    //        updateHandState / updateZoom / updateCamera / animate
+    // ============================================================
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+    import { FilesetResolver, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+
+    // ---------------- 可调常量 ----------------
+    const CONFIG = {
+      coreParticles: 60000,       // 星球核心粒子数（要求 50,000+）
+      innerRingParticles: 9000,   // 内环粒子
+      outerRingParticles: 13000,  // 外环粒子
+      planetRadius: 1.6,          // 星球半径
+
+      baseRadius: 4.3,            // 默认相机距离（视图拉大）
+      minDistance: 2.8,           // 安全下限（绝不穿入核心）
+      maxDistance: 14.0,          // 安全上限（场景不至于空荡）
+
+      yawRange: 1.7,              // 手部横向偏移 -> yaw（弧度）
+      pitchRange: 1.0,            // 手部纵向偏移 -> pitch（弧度）
+      rotationDamping: 3.4,       // 旋转惯性（越大越跟手）
+      idleYawSpeed: 0.14,         // 无手时自动缓慢旋转
+
+      zoomInDuration: 1.1,        // 推近时长
+      zoomOutDuration: 1.5,       // 拉远时长
+      zoomReturnDuration: 1.6,    // 复位时长
+      pullVel: -0.14,             // 手部尺度速度阈值：握拳+拉远
+      pushVel:  0.14,             // 手部尺度速度阈值：张掌+推近
+
+      fistThresh: 0.78,           // 手掌张开度低于此 => 拳头
+      openThresh: 1.35,           // 手掌张开度高于此 => 张掌
+
+      glowK: 7.5,                 // 辉光指数衰减系数
+      coreOpacity: 0.9,
+      ringOpacity: 0.85,
+
+      coreSpin: 0.03,             // 核心自转
+      innerRingSpeed: 0.5,        // 内环转速（更快）
+      outerRingSpeed: 0.18,       // 外环转速（更慢）
+
+      noiseAmp: 0.13,             // 表面"呼吸"振幅
+      noiseFreq: 1.9,             // 噪声频率
+      noiseSpeed: 0.35,           // 噪声演化速度
+
+      brightnessBoost: 1.55,      // 推近时亮度增强
+      sizeBoost: 1.4,             // 推近时粒子尺寸增强
+      spreadMax: 0.5,             // 拉远时粒子扩散
+      fovShift: 9,                // 拉远时 FOV 扩张（度）
+    };
+
+    // ---------------- 全局状态 ----------------
+    const state = {
+      w:0, h:0,
+      yaw:0.6, pitch:0.25,
+      yawTarget:0.6, pitchTarget:0.25,
+      radius: CONFIG.baseRadius,
+      zoomTween: null,
+      handDetected: false,
+      gesture: 'NONE',
+      scaleSmooth:0, prevScaleSmooth:0, scaleVel:0,
+      camReady:false, aiReady:false,
+    };
+
+    // ---------------- GLSL：3D Simplex 噪声（Ashima/Gustavson） ----------------
+    const NOISE_GLSL = `
+      vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+      vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+      vec4 permute(vec4 x){return mod289(((x*34.0)+10.0)*x);}
+      vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+      float snoise(vec3 v){
+        const vec2 C=vec2(1.0/6.0,1.0/3.0);
+        const vec4 D=vec4(0.0,0.5,1.0,2.0);
+        vec3 i=floor(v+dot(v,C.yyy));
+        vec3 x0=v-i+dot(i,C.xxx);
+        vec3 g=step(x0.yzx,x0.xyz);
+        vec3 l=1.0-g;
+        vec3 i1=min(g.xyz,l.zxy);
+        vec3 i2=max(g.xyz,l.zxy);
+        vec3 x1=x0-i1+C.xxx;
+        vec3 x2=x0-i2+C.yyy;
+        vec3 x3=x0-D.yyy;
+        i=mod289(i);
+        vec4 p=permute(permute(permute(
+          i.z+vec4(0.0,i1.z,i2.z,1.0))
+          +i.y+vec4(0.0,i1.y,i2.y,1.0))
+          +i.x+vec4(0.0,i1.x,i2.x,1.0));
+        float n_=0.142857142857;
+        vec3 ns=n_*D.wyz-D.xzx;
+        vec4 j=p-49.0*floor(p*ns.z*ns.z);
+        vec4 x_=floor(j*ns.z);
+        vec4 y_=floor(j-7.0*x_);
+        vec4 x=x_*ns.x+ns.yyyy;
+        vec4 y=y_*ns.x+ns.yyyy;
+        vec4 h=1.0-abs(x)-abs(y);
+        vec4 b0=vec4(x.xy,y.xy);
+        vec4 b1=vec4(x.zw,y.zw);
+        vec4 s0=floor(b0)*2.0+1.0;
+        vec4 s1=floor(b1)*2.0+1.0;
+        vec4 sh=-step(h,vec4(0.0));
+        vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;
+        vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+        vec3 p0=vec3(a0.xy,h.x);
+        vec3 p1=vec3(a0.zw,h.y);
+        vec3 p2=vec3(a1.xy,h.z);
+        vec3 p3=vec3(a1.zw,h.w);
+        vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+        p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;
+        vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0);
+        m=m*m;
+        return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+      }
+    `;
+
+    // 核心顶点着色器：自发光星球 + 噪声位移（表面呼吸）
+    const CORE_VERT = `
+      uniform float uTime, uSize, uPixelRatio, uSpread, uNoiseAmp, uNoiseFreq, uNoiseSpeed;
+      attribute float aSize, aPhase;
+      attribute vec3 aColor, aDir;
+      varying vec3 vColor;
+      ${NOISE_GLSL}
+      void main(){
+        vec3 pos = position * (1.0 + uSpread);
+        float t = uTime * uNoiseSpeed + aPhase;
+        vec3 np = position * uNoiseFreq;
+        float n1 = snoise(np + vec3(0.0, t, 0.0));
+        float n2 = snoise(np * 2.17 + vec3(t*0.7, -t*0.4, t*0.3));
+        float n = n1 * 0.65 + n2 * 0.35;
+        pos += aDir * (n * uNoiseAmp);
+        vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = uSize * aSize * uPixelRatio * (160.0 / -mv.z);
+        vColor = aColor;
+      }
+    `;
+
+    // 环顶点着色器：简洁明亮
+    const RING_VERT = `
+      uniform float uSize, uPixelRatio;
+      attribute float aSize;
+      attribute vec3 aColor;
+      varying vec3 vColor;
+      void main(){
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = uSize * aSize * uPixelRatio * (150.0 / -mv.z);
+        vColor = aColor;
+      }
+    `;
+
+    // 共享片元着色器：指数衰减软圆辉光
+    const FRAG = `
+      uniform float uGlow, uOpacity, uBrightness;
+      varying vec3 vColor;
+      void main(){
+        vec2 uv = gl_PointCoord - 0.5;
+        float d = length(uv);
+        if (d > 0.5) discard;
+        float glow = exp(-uGlow * d * d);
+        vec3 col = vColor * uBrightness * glow;
+        float alpha = uOpacity * glow;
+        gl_FragColor = vec4(col, alpha);
+      }
+    `;
+
+    // ---------------- 工具函数 ----------------
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const easeInBack = (t) => { const c1 = 1.70158, c3 = c1 + 1; return c3 * t * t * t - c1 * t * t; };
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+    const easeInOutCubic = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    // ---------------- Three.js 初始化 ----------------
+    let renderer, scene, camera;
+    let coreMesh, ringGroupIn, ringGroupOut;
+    let coreMat, ringMatIn, ringMatOut;
+
+    function initThree() {
+      renderer = new THREE.WebGLRenderer({
+        canvas: document.getElementById('scene'),
+        antialias: false,
+        powerPreference: 'high-performance',
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setClearColor(0x000000, 1);
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
+
+      onResize();
+      window.addEventListener('resize', onResize);
+    }
+
+    function onResize() {
+      state.w = window.innerWidth;
+      state.h = window.innerHeight;
+      renderer.setSize(state.w, state.h);
+      camera.aspect = state.w / state.h;
+      camera.updateProjectionMatrix();
+      document.getElementById('s-res').textContent = state.w + 'x' + state.h;
+    }
+
+    // ---------------- 太空星空背景 ----------------
+    function initStars() {
+      const wrap = document.getElementById('stars');
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < 420; i++) {
+        const s = document.createElement('span');
+        s.className = 'star' + (Math.random() < 0.08 ? ' hot' : Math.random() < 0.22 ? ' bright' : '');
+        s.style.left  = (Math.random() * 100).toFixed(2) + '%';
+        s.style.top   = (Math.random() * 100).toFixed(2) + '%';
+        const size = 1 + Math.random() * 1.6;
+        s.style.width = s.style.height = size.toFixed(2) + 'px';
+        const dur = (2 + Math.random() * 4).toFixed(2);
+        const delay = (Math.random() * 4).toFixed(2);
+        s.style.animation = `twinkle ${dur}s ease-in-out ${delay}s infinite`;
+        frag.appendChild(s);
+      }
+      wrap.appendChild(frag);
+    }
+
+    // ---------------- 粒子生成 ----------------
+    function makeCoreGeometry(count) {
+      const R = CONFIG.planetRadius;
+      const pos   = new Float32Array(count * 3);
+      const dir   = new Float32Array(count * 3);
+      const col   = new Float32Array(count * 3);
+      const size  = new Float32Array(count);
+      const phase = new Float32Array(count);
+      const palette = [[1.0,0.08,0.30],[1.0,0.20,0.55],[1.0,0.35,0.75],[1.0,0.85,1.00]];
+      const weights = [0.22,0.34,0.32,0.12];
+      for (let i = 0; i < count; i++) {
+        const u = Math.random() * 2 - 1;
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(1 - u * u);
+        const nx = r * Math.cos(a), ny = u, nz = r * Math.sin(a);
+        const rad = R * (0.45 + 0.55 * Math.pow(Math.random(), 1.25));
+        pos[i*3]   = nx * rad;
+        pos[i*3+1] = ny * rad;
+        pos[i*3+2] = nz * rad;
+        dir[i*3]   = nx;
+        dir[i*3+1] = ny;
+        dir[i*3+2] = nz;
+        let w = Math.random(), acc = 0, pick = palette[0];
+        for (let k = 0; k < palette.length; k++) { acc += weights[k]; if (w <= acc) { pick = palette[k]; break; } }
+        col[i*3]   = pick[0];
+        col[i*3+1] = pick[1];
+        col[i*3+2] = pick[2];
+        size[i]    = 0.45 + Math.random() * 0.85;
+        phase[i]   = Math.random() * 20;
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('aDir',     new THREE.BufferAttribute(dir, 3));
+      g.setAttribute('aColor',   new THREE.BufferAttribute(col, 3));
+      g.setAttribute('aSize',    new THREE.BufferAttribute(size, 1));
+      g.setAttribute('aPhase',   new THREE.BufferAttribute(phase, 1));
+      return g;
+    }
+
+    function makeRingGeometry(count, r0, r1, thick) {
+      const pos  = new Float32Array(count * 3);
+      const col  = new Float32Array(count * 3);
+      const size = new Float32Array(count);
+      const palette = [[1.0,0.30,0.55],[0.95,0.55,0.90],[1.0,0.60,0.90]];
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const rr  = r0 + (r1 - r0) * Math.random();
+        pos[i*3]   = Math.cos(ang) * rr + (Math.random() - 0.5) * thick;
+        pos[i*3+1] = (Math.random() - 0.5) * 0.05;
+        pos[i*3+2] = Math.sin(ang) * rr + (Math.random() - 0.5) * thick;
+        const c = palette[(Math.random() * palette.length) | 0];
+        col[i*3]   = c[0];
+        col[i*3+1] = c[1];
+        col[i*3+2] = c[2];
+        size[i]    = 0.55 + Math.random() * 0.75;
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('aColor',   new THREE.BufferAttribute(col, 3));
+      g.setAttribute('aSize',    new THREE.BufferAttribute(size, 1));
+      return g;
+    }
+
+    function makeGlowMaterial(vert, opts) {
+      const uniforms = Object.assign({
+        uGlow:       { value: CONFIG.glowK },
+        uOpacity:    { value: 1 },
+        uBrightness: { value: 1 },
+        uTime:       { value: 0 },
+        uSize:       { value: 1 },
+        uSpread:     { value: 0 },
+        uPixelRatio: { value: renderer.getPixelRatio() },
+      }, opts || {});
+      return new THREE.ShaderMaterial({
+        uniforms,
+        vertexShader: vert,
+        fragmentShader: FRAG,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+    }
+
+    function initParticles() {
+      // 星球核心
+      coreMat = makeGlowMaterial(CORE_VERT, {
+        uNoiseAmp:   { value: CONFIG.noiseAmp },
+        uNoiseFreq:  { value: CONFIG.noiseFreq },
+        uNoiseSpeed: { value: CONFIG.noiseSpeed },
+      });
+      coreMat.uniforms.uOpacity.value = CONFIG.coreOpacity;
+      coreMesh = new THREE.Points(makeCoreGeometry(CONFIG.coreParticles), coreMat);
+      coreMesh.frustumCulled = false;
+      scene.add(coreMesh);
+
+      // 内环（快）
+      ringMatIn = makeGlowMaterial(RING_VERT);
+      ringMatIn.uniforms.uOpacity.value = CONFIG.ringOpacity;
+      const inner = new THREE.Points(makeRingGeometry(CONFIG.innerRingParticles, 2.15, 2.6, 0.12), ringMatIn);
+      inner.frustumCulled = false;
+      ringGroupIn = new THREE.Group();
+      ringGroupIn.rotation.x = 0.42;
+      ringGroupIn.rotation.z = 0.15;
+      ringGroupIn.add(inner);
+      scene.add(ringGroupIn);
+
+      // 外环（慢）
+      ringMatOut = makeGlowMaterial(RING_VERT);
+      ringMatOut.uniforms.uOpacity.value = CONFIG.ringOpacity;
+      const outer = new THREE.Points(makeRingGeometry(CONFIG.outerRingParticles, 3.1, 3.85, 0.14), ringMatOut);
+      outer.frustumCulled = false;
+      ringGroupOut = new THREE.Group();
+      ringGroupOut.rotation.x = 0.58;
+      ringGroupOut.rotation.z = 0.22;
+      ringGroupOut.add(outer);
+      scene.add(ringGroupOut);
+
+      document.getElementById('r-core').textContent  = CONFIG.coreParticles;
+      document.getElementById('r-rings').textContent = CONFIG.innerRingParticles + CONFIG.outerRingParticles;
+    }
+
+    // ---------------- MediaPipe 初始化 ----------------
+    let handLandmarker = null;
+    const video = document.getElementById('cam');
+    const WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
+    const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+
+    async function initMediaPipe() {
+      const status = document.getElementById('r-mode');
+      try {
+        status.textContent = 'LOADING AI…';
+        const vision = await FilesetResolver.forVisionTasks(WASM_URL);
+        handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
+          runningMode: 'VIDEO',
+          numHands: 1,
+          minHandDetectionConfidence: 0.5,
+          minHandPresenceConfidence: 0.5,
+          minTrackingConfidence: 0.5,
+        });
+        state.aiReady = true;
+        status.textContent = 'SCANNING STANDBY';
+        console.log('[mediapipe] HandLandmarker ready');
+      } catch (e) {
+        console.warn('[mediapipe] GPU 初始化失败，回退 CPU…', e);
+        try {
+          const vision = await FilesetResolver.forVisionTasks(WASM_URL);
+          handLandmarker = await HandLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: MODEL_URL, delegate: 'CPU' },
+            runningMode: 'VIDEO',
+            numHands: 1,
+          });
+          state.aiReady = true;
+          status.textContent = 'SCANNING STANDBY (CPU)';
+        } catch (e2) {
+          status.textContent = 'AI OFFLINE — IDLE ROTATION';
+          console.error('[mediapipe] 加载失败', e2);
+        }
+      }
+    }
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, facingMode: 'user' },
+        });
+        video.srcObject = stream;
+        await video.play();
+        state.camReady = true;
+      } catch (e) {
+        console.warn('[camera] 摄像头不可用，控制禁用', e);
+        document.getElementById('r-mode').textContent = 'CAMERA BLOCKED — IDLE ROTATION';
+      }
+    }
+
+    // ---------------- 手部状态 / 手势识别 ----------------
+    const pt = (a, b) => {
+      const dx = a.x - b.x, dy = a.y - b.y, dz = (a.z || 0) - (b.z || 0);
+      return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    };
+
+    function updateHandState(now, dt) {
+      if (!state.aiReady || !state.camReady || video.readyState < 2) return;
+      let results;
+      try { results = handLandmarker.detectForVideo(video, now); }
+      catch (e) { return; }
+
+      const lm = results && results.landmarks && results.landmarks[0];
+      const tracking = !!lm;
+      setTracking(tracking);
+
+      if (!lm) {
+        state.handDetected = false;
+        state.gesture = 'NONE';
+        state.scaleSmooth = 0;
+        state.prevScaleSmooth = 0;
+        state.scaleVel = 0;
+        return;
+      }
+      state.handDetected = true;
+
+      // 原始掌心中点（用于手势计算，不镜像）
+      const idx = [0, 1, 2, 5, 9, 13, 17];
+      let rx = 0, ry = 0;
+      for (const i of idx) { rx += lm[i].x; ry += lm[i].y; }
+      rx /= idx.length; ry /= idx.length;
+
+      // ---- 旋转意图（镜像坐标，与实时预览方向一致）----
+      state.yawTarget   = CONFIG.yawRange   * ((1 - rx) - 0.5);
+      state.pitchTarget = CONFIG.pitchRange * (0.5 - ry);
+
+      // ---- 手部尺度 + 深度速度（推/拉判定）----
+      const hs = pt(lm[0], lm[9]);
+      if (state.scaleSmooth === 0) { state.scaleSmooth = hs; state.prevScaleSmooth = hs; }
+      state.scaleSmooth = lerp(state.scaleSmooth, hs, 0.35);
+      state.scaleVel = (state.scaleSmooth - state.prevScaleSmooth) / dt;
+      state.prevScaleSmooth = state.scaleSmooth;
+
+      // ---- 拳头 vs 张掌（四指指尖到掌心距离 / 手部尺度）----
+      const tips = [8, 12, 16, 20];
+      let ext = 0;
+      for (const i of tips) ext += pt(lm[i], { x: rx, y: ry, z: lm[9].z });
+      ext /= tips.length;
+      const openness = ext / hs;
+
+      if (openness > CONFIG.openThresh)      state.gesture = 'PALM';
+      else if (openness < CONFIG.fistThresh) state.gesture = 'FIST';
+      // 滞回区间内保持上一状态，避免抖动
+    }
+
+    function setTracking(on) {
+      document.getElementById('hud').classList.toggle('tracking', on);
+      document.getElementById('scanlines').classList.toggle('tracking', on);
+      const t = document.getElementById('tracking');
+      t.classList.toggle('tracking', on);
+      document.getElementById('track-text').textContent =
+        on ? 'HAND DETECTED // TRACKING…' : 'STANDBY // AWAITING SIGNAL';
+    }
+
+    // ---------------- 变焦（带缓动曲线） ----------------
+    function tweenRadius(to, dur, ease) {
+      state.zoomTween = { from: state.radius, to, dur, t: 0, ease };
+    }
+
+    function updateZoom(dt) {
+      const { baseRadius, minDistance, maxDistance, pullVel, pushVel } = CONFIG;
+      const pulling = state.gesture === 'FIST' && state.scaleVel < pullVel;
+      const pushing = state.gesture === 'PALM' && state.scaleVel > pushVel;
+      const tw = state.zoomTween;
+      const atMin  = Math.abs(state.radius - minDistance) < 0.01;
+      const atMax  = Math.abs(state.radius - maxDistance) < 0.01;
+      const atBase = Math.abs(state.radius - baseRadius) < 0.01;
+
+      if      (pulling && !atMax && (!tw || tw.to !== maxDistance)) tweenRadius(maxDistance, CONFIG.zoomOutDuration, easeInBack);
+      else if (pushing && !atMin && (!tw || tw.to !== minDistance)) tweenRadius(minDistance, CONFIG.zoomInDuration, easeOutCubic);
+      else if (!pulling && !pushing && !atBase && (!tw || tw.to !== baseRadius)) tweenRadius(baseRadius, CONFIG.zoomReturnDuration, easeInOutCubic);
+
+      if (state.zoomTween) {
+        const z = state.zoomTween;
+        z.t += dt;
+        const p = clamp(z.t / z.dur, 0, 1);
+        state.radius = lerp(z.from, z.to, z.ease(p));
+        if (p >= 1) { state.radius = z.to; state.zoomTween = null; }
+      }
+
+      // 硬性安全钳制：不穿核心，也不至于空荡
+      state.radius = clamp(state.radius, minDistance * 0.9, maxDistance * 1.12);
+
+      const label = pulling ? 'FIST + PULL' : pushing ? 'OPEN PALM + PUSH' : state.gesture;
+      document.getElementById('g-val').textContent = label;
+    }
+
+    // ---------------- 相机 / 效果 ----------------
+    function updateCamera(dt) {
+      const damp = 1 - Math.exp(-CONFIG.rotationDamping * dt);
+      if (!state.handDetected) {
+        // 空闲电影感漂移
+        state.yawTarget = state.yaw + CONFIG.idleYawSpeed * dt;
+        state.pitchTarget = lerp(state.pitchTarget, 0.22, 1 - Math.exp(-1.2 * dt));
+        state.gesture = 'NONE';
+      }
+      state.yaw = lerp(state.yaw, state.yawTarget, damp);
+      state.pitch = lerp(state.pitch, state.pitchTarget, damp);
+      state.pitch = clamp(state.pitch, -1.05, 1.05);
+
+      const cp = Math.cos(state.pitch);
+      camera.position.set(
+        state.radius * Math.sin(state.yaw) * cp,
+        state.radius * Math.sin(state.pitch),
+        state.radius * Math.cos(state.yaw) * cp
+      );
+      camera.lookAt(0, 0, 0);
+
+      // 变焦联动：靠近 => 更亮更大；远离 => 扩散 + FOV 扩张
+      const nrm = clamp((state.radius - CONFIG.minDistance) / (CONFIG.maxDistance - CONFIG.minDistance), 0, 1);
+      const brightness = 1 + (1 - nrm) * CONFIG.brightnessBoost;
+      const sizeScale = 1 + (1 - nrm) * CONFIG.sizeBoost;
+      const spread    = nrm * CONFIG.spreadMax;
+      const pulse     = 1 + 0.05 * Math.sin(performance.now() * 0.0012);
+      const fov       = 60 + nrm * CONFIG.fovShift;
+      if (Math.abs(camera.fov - fov) > 0.001) { camera.fov = fov; camera.updateProjectionMatrix(); }
+
+      coreMat.uniforms.uBrightness.value = brightness * pulse;
+      coreMat.uniforms.uSize.value       = 0.42 * sizeScale;
+      coreMat.uniforms.uSpread.value     = spread;
+      coreMat.uniforms.uTime.value       = performance.now() * 0.001;
+      ringMatIn.uniforms.uBrightness.value = brightness;
+      ringMatIn.uniforms.uSize.value       = 0.50 * sizeScale;
+      ringMatOut.uniforms.uBrightness.value = brightness;
+      ringMatOut.uniforms.uSize.value       = 0.55 * sizeScale;
+
+      // 环自转（内快外慢）与核心自转
+      ringGroupIn.rotation.y  += CONFIG.innerRingSpeed * dt;
+      ringGroupOut.rotation.y += CONFIG.outerRingSpeed * dt;
+      coreMesh.rotation.y     += CONFIG.coreSpin * dt;
+    }
+
+    // ---------------- 主循环 ----------------
+    let last = performance.now();
+    let fpsAccum = 0, fpsCount = 0;
+
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const dt = clamp((now - last) / 1000, 0.001, 0.05);
+      last = now;
+
+      updateHandState(now, dt);
+      updateZoom(dt);
+      updateCamera(dt);
+
+      renderer.render(scene, camera);
+
+      // FPS 读数
+      fpsAccum += dt; fpsCount++;
+      if (fpsAccum >= 0.5) {
+        document.getElementById('s-fps').textContent = 'FPS ' + Math.round(fpsCount / fpsAccum);
+        fpsAccum = 0; fpsCount = 0;
+      }
+    }
+
+    // ---------------- 启动 ----------------
+    async function boot() {
+      initThree();
+      initStars();
+      initParticles();
+      initMediaPipe();
+      startCamera();
+      requestAnimationFrame(animate);
+    }
+    boot();
+  </script>
+</body>
+</html>
