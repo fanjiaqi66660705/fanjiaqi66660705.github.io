@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#151C30">
+<title>暖心 Helper 1.0 · 范嘉琪</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body {
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#0B1120; color:#DCE2F4;
+    display:flex; justify-content:center;
+  }
+  #app {
+    width:100%; max-width:430px; min-height:100vh; min-height:100dvh;
+    background:#151C30; position:relative;
+    display:flex; flex-direction:column;
+    box-shadow:0 0 60px rgba(0,0,0,.6);
+  }
+  /* ---------- 顶栏 ---------- */
+  .topbar {
+    display:flex; align-items:center; gap:12px;
+    padding:calc(env(safe-area-inset-top,0px) + 16px) 18px 14px;
+    background:linear-gradient(180deg,#1A2340,#151C30);
+    border-bottom:1px solid #262F4E;
+  }
+  .appicon {
+    width:42px; height:42px; border-radius:12px;
+    background:linear-gradient(135deg,#FF8A65,#E85D3F);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; color:#fff; flex-shrink:0;
+    box-shadow:0 4px 14px rgba(255,138,101,.35);
+  }
+  .appname { font-size:17px; font-weight:700; color:#fff; }
+  .appname .v { color:#FFC85C; font-size:13px; margin-left:2px; }
+  .appslogan { font-size:11px; color:#939FC4; margin-top:2px; }
+  .live {
+    margin-left:auto; font-size:10px; font-weight:700; color:#FFC85C;
+    border:1px solid #4A4226; background:#2A2517;
+    padding:4px 9px; border-radius:20px; letter-spacing:1px;
+  }
+  /* ---------- 页面 ---------- */
+  main { flex:1; padding:16px 16px calc(96px + env(safe-area-inset-bottom,0px)); }
+  .page { display:none; animation:fadein .25s ease; }
+  .page.active { display:block; }
+  @keyframes fadein { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+  .card {
+    background:#1F2844; border:1px solid #2B3557; border-radius:16px;
+    padding:18px; margin-bottom:14px;
+  }
+  .card h3 { font-size:15px; color:#fff; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+  .card h3 .dot { width:8px; height:8px; border-radius:50%; background:#FF8A65; flex-shrink:0; }
+  .card .sub { font-size:11.5px; color:#939FC4; margin-bottom:12px; }
+  .pill { display:inline-block; font-size:10.5px; font-weight:600; padding:3px 10px; border-radius:20px; }
+  .pill.coral { background:#33222B; color:#FF8A65; }
+  .pill.teal  { background:#16332F; color:#3AC7B6; }
+  .pill.gold  { background:#332B18; color:#FFC85C; }
+  /* ---------- 首页 ---------- */
+  .hero {
+    background:linear-gradient(135deg,#232C52,#1F2844);
+    border:1px solid #34406B; border-radius:18px; padding:20px 18px;
+    margin-bottom:14px; position:relative; overflow:hidden;
+  }
+  .hero::after {
+    content:""; position:absolute; right:-30px; top:-30px;
+    width:120px; height:120px; border-radius:50%;
+    background:radial-gradient(circle,rgba(255,200,92,.12),transparent 70%);
+  }
+  .hero .hi { font-size:12px; color:#939FC4; margin-bottom:6px; }
+  .hero .name { font-size:24px; font-weight:800; color:#fff; margin-bottom:10px; }
+  .hero .name em { font-style:normal; color:#FFC85C; }
+  .hero .slogan { font-size:13px; line-height:1.7; color:#C9D2EC; }
+  .hero .slogan b.coral{color:#FF8A65} .hero .slogan b.teal{color:#3AC7B6}
+  .stats { display:flex; gap:10px; margin-bottom:14px; }
+  .stat {
+    flex:1; background:#1F2844; border:1px solid #2B3557; border-radius:14px;
+    padding:13px 6px; text-align:center;
+  }
+  .stat .n { font-size:19px; font-weight:800; }
+  .stat .t { font-size:10.5px; color:#939FC4; margin-top:3px; }
+  .stat:nth-child(1) .n{color:#FF8A65} .stat:nth-child(2) .n{color:#3AC7B6} .stat:nth-child(3) .n{color:#FFC85C}
+  .vercard {
+    display:flex; align-items:center; gap:12px;
+    background:#1F2844; border:1px solid #2B3557; border-radius:14px;
+    padding:14px; margin-bottom:10px; cursor:pointer; transition:transform .15s;
+  }
+  .vercard:active { transform:scale(.98); }
+  .vercard .ic {
+    width:40px; height:40px; border-radius:11px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:19px; color:#151C30; font-weight:800;
+  }
+  .vercard.coral .ic { background:#FF8A65; } .vercard.teal .ic { background:#3AC7B6; }
+  .vercard .vt { font-size:14.5px; font-weight:700; color:#fff; }
+  .vercard .vd { font-size:11px; color:#939FC4; margin-top:2px; }
+  .vercard .arrow { margin-left:auto; color:#5A6690; font-size:16px; }
+  .linkbar {
+    text-align:center; padding:13px; border-radius:14px;
+    background:#1F2844; border:1px dashed #3A4570; font-size:12.5px; color:#939FC4;
+  }
+  .linkbar a { color:#FF8A65; text-decoration:none; font-weight:700; }
+  /* ---------- 情绪守护 ---------- */
+  .moods { display:flex; justify-content:space-between; gap:6px; }
+  .mood {
+    flex:1; aspect-ratio:1; max-width:64px; border-radius:14px;
+    background:#273052; border:1px solid #2B3557; border:none;
+    font-size:26px; cursor:pointer; transition:transform .12s, background .2s;
+  }
+  .mood:active { transform:scale(.9); }
+  .mood.on { background:#33222B; border-color:#FF8A65; }
+  .moodmsg {
+    margin-top:12px; font-size:13px; color:#FFC85C; min-height:20px;
+    opacity:0; transition:opacity .3s;
+  }
+  .moodmsg.show { opacity:1; }
+  /* 呼吸舱 */
+  .breath-wrap { display:flex; flex-direction:column; align-items:center; padding:6px 0 2px; }
+  .breath-ring {
+    width:150px; height:150px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #3A4A7E, #232C52);
+    border:2px solid #4A5A94;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform 4s cubic-bezier(.45,0,.55,1);
+    box-shadow:0 0 40px rgba(90,110,190,.25) inset;
+  }
+  .breath-ring .phase { font-size:17px; font-weight:700; color:#fff; }
+  .breath-count { font-size:11.5px; color:#939FC4; margin-top:12px; min-height:16px; }
+  .btn {
+    display:block; width:100%; padding:13px; border:none; border-radius:12px;
+    font-size:14.5px; font-weight:700; cursor:pointer; margin-top:14px;
+    background:#FF8A65; color:#151C30; transition:transform .12s, opacity .2s;
+  }
+  .btn:active { transform:scale(.97); }
+  .btn.ghost { background:#273052; color:#DCE2F4; border:1px solid #34406B; }
+  .btn.teal { background:#3AC7B6; }
+  /* 树洞 */
+  textarea {
+    width:100%; min-height:84px; resize:none; border:none; outline:none;
+    background:#273052; border:1px solid #34406B; border-radius:12px;
+    color:#DCE2F4; font-size:13.5px; font-family:inherit; padding:12px;
+  }
+  textarea:focus { border-color:#FF8A65; }
+  .hole-item {
+    background:#273052; border-radius:12px; padding:12px 14px; margin-top:10px;
+    font-size:13px; color:#C9D2EC; line-height:1.6;
+  }
+  .hole-item .time { font-size:10.5px; color:#5A6690; margin-bottom:4px; }
+  .hole-reply {
+    margin-top:8px; font-size:12px; color:#FF8A65;
+    background:#33222B; border-radius:8px; padding:8px 10px;
+  }
+  /* 贴士 */
+  .tip { font-size:13.5px; color:#C9D2EC; line-height:1.7; }
+  /* ---------- 创意策划 ---------- */
+  .idea-box {
+    min-height:96px; background:#273052; border:1px solid #34406B; border-radius:14px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:14px; text-align:center;
+  }
+  .idea-box .combo { font-size:16.5px; font-weight:800; color:#FFC85C; line-height:1.5; }
+  .idea-box .note { font-size:11px; color:#939FC4; margin-top:8px; }
+  .pop { animation:pop .35s ease; }
+  @keyframes pop { 0%{transform:scale(.85);opacity:0} 100%{transform:scale(1);opacity:1} }
+  .poll-opt {
+    margin-top:10px; cursor:pointer;
+  }
+  .poll-opt .plabel {
+    display:flex; justify-content:space-between; font-size:13px; color:#C9D2EC; margin-bottom:5px;
+  }
+  .poll-opt .pbarbg { height:10px; background:#273052; border-radius:10px; overflow:hidden; }
+  .poll-opt .pbar { height:100%; border-radius:10px; background:linear-gradient(90deg,#3AC7B6,#2A8F84); width:0; transition:width .5s ease; }
+  .poll-opt:nth-child(odd) .pbar { background:linear-gradient(90deg,#FF8A65,#C9563A); }
+  /* ---------- 关于 ---------- */
+  .profile { text-align:center; padding:6px 0 2px; }
+  .avatar {
+    width:74px; height:74px; border-radius:50%; margin:0 auto 12px;
+    background:linear-gradient(135deg,#FF8A65,#E85D3F);
+    display:flex; align-items:center; justify-content:center;
+    font-size:34px; color:#fff; font-weight:800;
+    box-shadow:0 6px 22px rgba(255,138,101,.35);
+  }
+  .profile .pname { font-size:20px; font-weight:800; color:#fff; }
+  .profile .pmeta { font-size:12px; color:#939FC4; margin:5px 0 12px; }
+  .qual { list-style:none; }
+  .qual li {
+    font-size:13px; color:#C9D2EC; padding:9px 0; border-bottom:1px solid #2B3557;
+    display:flex; gap:9px; align-items:baseline;
+  }
+  .qual li:last-child { border-bottom:none; }
+  .qual .qd { color:#FFC85C; font-weight:800; flex-shrink:0; }
+  /* ---------- 底部导航 ---------- */
+  .tabbar {
+    position:absolute; left:0; right:0; bottom:0;
+    display:flex; background:#121828;
+    border-top:1px solid #262F4E;
+    padding:8px 6px calc(env(safe-area-inset-bottom,0px) + 8px);
+  }
+  .tab {
+    flex:1; border:none; background:none; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    color:#5A6690; font-size:10.5px; font-family:inherit; padding:4px 0;
+  }
+  .tab .ti { font-size:20px; line-height:1; }
+  .tab.on { color:#FFC85C; }
+  .tab.on .ti { transform:translateY(-1px); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="appicon">♥</div>
+    <div>
+      <div class="appname">暖心 Helper <span class="v">1.0</span></div>
+      <div class="appslogan">情绪守护 × 创意策划</div>
+    </div>
+    <span class="live">● LIVE</span>
+  </header>
+
+  <main>
+    <!-- ============ 首页 ============ -->
+    <section id="page-home" class="page active">
+      <div class="hero">
+        <div class="hi">你好，我是</div>
+        <div class="name">范嘉琪<em>。</em></div>
+        <div class="slogan">
+          做<b class="coral">心理委员</b>，守护班级的温暖与安全感；<br>
+          做<b class="teal">组宣委员</b>，让班级风采被更多人看见。
+        </div>
+        <div style="margin-top:12px">
+          <span class="pill coral">第一志愿 · 心理委员</span>
+          <span class="pill teal">第二志愿 · 组宣委员</span>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="n">10+</div><div class="t">年中国舞</div></div>
+        <div class="stat"><div class="n">20+</div><div class="t">场活动组织</div></div>
+        <div class="stat"><div class="n">5+</div><div class="t">类 AI 作品</div></div>
+      </div>
+
+      <div class="vercard coral" onclick="go('mood')">
+        <div class="ic">♥</div>
+        <div><div class="vt">情绪守护模块</div><div class="vd">心情打卡 · 深呼吸舱 · 匿名树洞</div></div>
+        <div class="arrow">›</div>
+      </div>
+      <div class="vercard teal" onclick="go('plan')">
+        <div class="ic">✦</div>
+        <div><div class="vt">创意策划模块</div><div class="vd">灵感引擎 · 团日投票 · 高光共创</div></div>
+        <div class="arrow">›</div>
+      </div>
+
+      <div class="linkbar">
+        运行内存：一颗真心 ｜ 广告：无 ｜ 崩溃率：0%<br><br>
+        开发者主页：<a href="https://fanjiaqi66660705.github.io/" target="_blank">fanjiaqi66660705.github.io</a>
+      </div>
+    </section>
+
+    <!-- ============ 情绪守护 ============ -->
+    <section id="page-mood" class="page">
+      <div class="card">
+        <h3><span class="dot"></span>今日心情打卡</h3>
+        <div class="sub">点一下，告诉我你今天的天气</div>
+        <div class="moods">
+          <button class="mood" data-m="开心">😄</button>
+          <button class="mood" data-m="平静">😌</button>
+          <button class="mood" data-m="难过">😢</button>
+          <button class="mood" data-m="烦躁">😠</button>
+          <button class="mood" data-m="疲惫">😴</button>
+        </div>
+        <div class="moodmsg" id="moodmsg"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#3AC7B6"></span>深呼吸减压舱</h3>
+        <div class="sub">4 秒吸气 → 4 秒屏息 → 4 秒呼气，来三轮</div>
+        <div class="breath-wrap">
+          <div class="breath-ring" id="ring"><span class="phase" id="phase">准备好了吗</span></div>
+          <div class="breath-count" id="breathCount"></div>
+          <button class="btn" id="breathBtn" onclick="toggleBreath()">开始深呼吸</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot"></span>匿名树洞</h3>
+        <div class="sub">烦恼投进来，只倾听、不说教，仅保存在你自己的设备上</div>
+        <textarea id="holeText" maxlength="200" placeholder="今天有什么想说的……（匿名）"></textarea>
+        <button class="btn" onclick="dropHole()">投进树洞 🌳</button>
+        <div id="holeList"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#FFC85C"></span>今日心理小贴士</h3>
+        <div class="tip" id="tipText"></div>
+        <button class="btn ghost" onclick="nextTip()">换一条</button>
+      </div>
+    </section>
+
+    <!-- ============ 创意策划 ============ -->
+    <section id="page-plan" class="page">
+      <div class="card">
+        <h3><span class="dot" style="background:#3AC7B6"></span>灵感引擎</h3>
+        <div class="sub">主题 × 形式 × 亮点，一键生成团日新点子</div>
+        <div class="idea-box" id="ideaBox">
+          <div class="combo" id="ideaCombo">点击下方按钮<br>生成你的专属团日</div>
+          <div class="note" id="ideaNote">灵感不限量 · AI 加持</div>
+        </div>
+        <button class="btn teal" onclick="genIdea()">✦ 生成灵感</button>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#3AC7B6"></span>下一场团日，你说了算</h3>
+        <div class="sub">真实投票 · 数据保存在本机 · 当选后全站开放</div>
+        <div id="pollList"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#FFC85C"></span>班级高光 · 待记录</h3>
+        <div class="sub">这些时刻，值得被做成推文和短视频</div>
+        <div class="hole-item">📷 军训场上的第一张全家福</div>
+        <div class="hole-item">🎉 第一次班会 · 全员自我介绍名场面</div>
+        <div class="hole-item">🏆 等待我们共同创造的第 1 个班级荣誉</div>
+      </div>
+    </section>
+
+    <!-- ============ 关于 ============ -->
+    <section id="page-about" class="page">
+      <div class="card profile">
+        <div class="avatar">范</div>
+        <div class="pname">范嘉琪</div>
+        <div class="pmeta">河南大学 · 思想政治教育 · 2026 级</div>
+        <span class="pill coral">心理委员候选人 · 第一志愿</span>
+        <span class="pill teal">组宣委员候选人 · 第二志愿</span>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:#FFC85C"></span>开发者资质</h3>
+        <ul class="qual">
+          <li><span class="qd">10+ 年</span>中国舞训练 · 省市春晚 C 位 · 国际模特巡演</li>
+          <li><span class="qd">20+ 场</span>曾任班长 / 团支书 / 文艺委员，活动策划统筹</li>
+          <li><span class="qd">5+ 类</span>AI 全品类创作：PPT / 网站 / 小游戏 / 音乐，持阿里云认证</li>
+          <li><span class="qd">2 合 1</span>巨蟹座 × INFJ 情绪传感器，共情力出厂满格</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="dot"></span>联系开发者</h3>
+        <div class="sub">合作 / 倾诉 / 拉票，均可联系</div>
+        <div class="hole-item" style="text-align:center">
+          📧 fanjiaqi66660705@qq.com<br><br>
+          <a href="https://fanjiaqi66660705.github.io/" target="_blank" style="color:#FF8A65;font-weight:700;text-decoration:none">→ 我的个人数字名片</a>
+        </div>
+      </div>
+      <div class="linkbar">
+        暖心 Helper 1.0 · 由范嘉琪与 AI 结对开发<br>本程序不联网收集任何数据，请放心使用
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab on" data-page="home" onclick="go('home')"><span class="ti">🏠</span>首页</button>
+    <button class="tab" data-page="mood" onclick="go('mood')"><span class="ti">♥</span>情绪守护</button>
+    <button class="tab" data-page="plan" onclick="go('plan')"><span class="ti">✦</span>创意策划</button>
+    <button class="tab" data-page="about" onclick="go('about')"><span class="ti">😊</span>关于</button>
+  </nav>
+</div>
+
+<script>
+/* ================= 页面切换 ================= */
+function go(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.page===name));
+  window.scrollTo({top:0});
+}
+
+/* ================= 心情打卡 ================= */
+const moodReplies = {
+  "开心":"太好了！把这份开心存进班级云盘，明天继续发光 💛",
+  "平静":"平静是很珍贵的能量，记得给自己倒杯水。",
+  "难过":"抱抱你 🫂 难过不用假装没事，我随时都在。",
+  "烦躁":"深呼吸三次，把烦的事写进下面的树洞，我陪你理一理。",
+  "疲惫":"今晚早点睡，明天的早八我来喊你起床 💪"
+};
+document.querySelectorAll('.mood').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.mood').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    const m=b.dataset.m;
+    const msg=document.getElementById('moodmsg');
+    msg.textContent='收到你的【'+m+'】｜ '+moodReplies[m];
+    msg.classList.add('show');
+    save('mh_mood',{m:m,t:Date.now()});
+  });
+});
+
+/* ================= 深呼吸 ================= */
+let breathTimer=null;
+const phases=[["吸气",4,1.25],["屏息",4,1.25],["呼气",4,0.75]];
+function toggleBreath(){
+  const btn=document.getElementById('breathBtn');
+  if(breathTimer){ stopBreath(); return; }
+  let round=0,pi=0;
+  const ring=document.getElementById('ring'), ph=document.getElementById('phase'), cnt=document.getElementById('breathCount');
+  function step(){
+    const [label,secs,scale]=phases[pi];
+    ph.textContent=label;
+    ring.style.transition='transform '+secs+'s cubic-bezier(.45,0,.55,1)';
+    ring.style.transform='scale('+scale+')';
+    cnt.textContent='第 '+(round+1)+' / 3 轮';
+    pi++;
+    if(pi>=phases.length){ pi=0; round++; }
+    if(round>=3){ setTimeout(()=>{ stopBreath(); cnt.textContent='完成 ✨ 感觉好些了吗？'; },4000); breathTimer=setTimeout(step,9e9); return; }
+    breathTimer=setTimeout(step,secs*1000);
+  }
+  btn.textContent='结束';
+  step();
+}
+function stopBreath(){
+  clearTimeout(breathTimer); breathTimer=null;
+  const ring=document.getElementById('ring');
+  ring.style.transition='transform .8s ease'; ring.style.transform='scale(1)';
+  document.getElementById('phase').textContent='准备好了吗';
+  document.getElementById('breathCount').textContent='';
+  document.getElementById('breathBtn').textContent='开始深呼吸';
+}
+
+/* ================= 匿名树洞 ================= */
+function save(k,v){ const a=JSON.parse(localStorage.getItem(k)||'[]'); a.push(v); localStorage.setItem(k,JSON.stringify(a)); }
+function load(k){ return JSON.parse(localStorage.getItem(k)||'[]'); }
+const autoReplies=[
+  "树洞收到啦 🌳 你已经勇敢地迈出第一步了。",
+  "谢谢你愿意说给我听，这不是小事。",
+  "慢慢来，我先陪你待一会儿。🫂",
+  "如果愿意，明天可以当面找我聊聊，我请奶茶 🧋",
+  "这个烦恼值得被认真对待，你已经很棒了。"
+];
+function dropHole(){
+  const ta=document.getElementById('holeText');
+  const v=ta.value.trim();
+  if(!v){ alert('写点什么再投吧～'); return; }
+  save('mh_hole',{t:Date.now(),text:v,reply:autoReplies[Math.floor(Math.random()*autoReplies.length)]});
+  ta.value='';
+  renderHole();
+}
+function fmt(t){
+  const d=Date.now()-t;
+  if(d<60000) return '刚刚';
+  if(d<3600000) return Math.floor(d/60000)+' 分钟前';
+  if(d<86400000) return Math.floor(d/3600000)+' 小时前';
+  return new Date(t).toLocaleDateString();
+}
+function renderHole(){
+  const list=load('mh_hole').slice(-20).reverse();
+  const el=document.getElementById('holeList');
+  el.innerHTML=list.map(h=>
+    '<div class="hole-item"><div class="time">投递于 '+fmt(h.t)+'</div>'+esc(h.text)+
+    '<div class="hole-reply">🌳 树洞回信：'+esc(h.reply)+'</div></div>').join('');
+}
+function esc(s){ return (s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+renderHole();
+
+/* ================= 小贴士 ================= */
+const tips=[
+  "情绪像天气，有阴有晴都很正常——允许自己emo，也相信自己会晴。",
+  "写不下作业时，试试「只做 5 分钟」：往往一开始，就停不下来了。",
+  "想家是爱的证据，不是软弱。给爸妈发条语音吧。",
+  "睡前 1 小时放下手机，深呼吸 3 轮，入睡速度 +50%。",
+  "和朋友闹别扭了？先描述感受，再讲道理：'我觉得…'比'你怎么…'更近一步。",
+  "每天记录一件小确幸，一个月后你会感谢现在的自己。"
+];
+let tipIdx=Math.floor(Math.random()*tips.length);
+function nextTip(){ tipIdx=(tipIdx+1)%tips.length; document.getElementById('tipText').textContent='💡 '+tips[tipIdx]; }
+nextTip();
+
+/* ================= 灵感引擎 ================= */
+const themes=["中秋","国庆","跨年","期末解压","汉服国风","星空露营","运动会","毕业季","节气","周年庆"];
+const forms=["剧本杀","主题晚会","城市定向","露天电影","手作工坊","荧光夜跑","快闪","换装游园","班级综艺","密室闯关"];
+const highs=["汉服打卡","AI 合影墙","盲盒交换","班级歌单共创","时光信箱","荧光涂鸦","零食拍卖会","手势舞挑战","电影复刻海报","心愿漂流瓶"];
+function genIdea(){
+  const c=themes[Math.floor(Math.random()*themes.length)]
+        +" × "+forms[Math.floor(Math.random()*forms.length)]
+        +" × "+highs[Math.floor(Math.random()*highs.length)];
+  const box=document.getElementById('ideaBox');
+  const el=document.getElementById('ideaCombo');
+  el.innerHTML=c;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  document.getElementById('ideaNote').textContent='灵感编号 #'+String(Math.floor(Math.random()*900)+100)+' · 交给组宣委员，马上落地';
+}
+
+/* ================= 团日投票 ================= */
+const pollData=["桌游之夜","露天电影","荧光夜跑","手作工坊"];
+function renderPoll(){
+  const votes=JSON.parse(localStorage.getItem('mh_poll')||'{}');
+  const total=pollData.reduce((s,o)=>s+(votes[o]||0),0)||1;
+  document.getElementById('pollList').innerHTML=pollData.map(o=>{
+    const n=votes[o]||0, pct=Math.round(n/total*100);
+    return '<div class="poll-opt" onclick="vote(\''+o+'\')">'+
+      '<div class="plabel"><span>'+o+'</span><span>'+n+' 票 · '+pct+'%</span></div>'+
+      '<div class="pbarbg"><div class="pbar" style="width:'+pct+'%"></div></div></div>';
+  }).join('');
+}
+function vote(o){
+  const votes=JSON.parse(localStorage.getItem('mh_poll')||'{}');
+  votes[o]=(votes[o]||0)+1;
+  localStorage.setItem('mh_poll',JSON.stringify(votes));
+  renderPoll();
+}
+renderPoll();
+</script>
+</body>
+</html>
