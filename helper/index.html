@@ -4,19 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#151C30">
-<title>暖心 Helper 1.0 · 范嘉琪</title>
+<title>栖光 · LUMEN</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; }
   body {
-    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    font-family:"PingFang SC","Microsoft YaHei",-apple-system,sans-serif;
     background:#0B1120; color:#DCE2F4;
     display:flex; justify-content:center;
   }
   #app {
     width:100%; max-width:430px; min-height:100vh; min-height:100dvh;
     background:#151C30; position:relative;
-    display:flex; flex-direction:column;
     box-shadow:0 0 60px rgba(0,0,0,.6);
   }
   /* ---------- 顶栏 ---------- */
@@ -25,62 +24,64 @@
     padding:calc(env(safe-area-inset-top,0px) + 16px) 18px 14px;
     background:linear-gradient(180deg,#1A2340,#151C30);
     border-bottom:1px solid #262F4E;
+    position:sticky; top:0; z-index:20;
   }
   .appicon {
     width:42px; height:42px; border-radius:12px;
-    background:linear-gradient(135deg,#FF8A65,#E85D3F);
+    background:linear-gradient(135deg,#FFC85C,#E8953F);
     display:flex; align-items:center; justify-content:center;
-    font-size:22px; color:#fff; flex-shrink:0;
-    box-shadow:0 4px 14px rgba(255,138,101,.35);
+    font-size:20px; color:#151C30; font-weight:900; flex-shrink:0;
+    box-shadow:0 4px 14px rgba(255,200,92,.3);
   }
-  .appname { font-size:17px; font-weight:700; color:#fff; }
-  .appname .v { color:#FFC85C; font-size:13px; margin-left:2px; }
-  .appslogan { font-size:11px; color:#939FC4; margin-top:2px; }
+  .appname { font-size:17px; font-weight:800; color:#fff; letter-spacing:.5px; }
+  .appname .v { color:#FFC85C; font-size:12px; margin-left:4px; font-weight:600; }
+  .appslogan { font-size:11px; color:#939FC4; margin-top:2px; letter-spacing:1px; }
   .live {
-    margin-left:auto; font-size:10px; font-weight:700; color:#FFC85C;
-    border:1px solid #4A4226; background:#2A2517;
+    margin-left:auto; font-size:10px; font-weight:700; color:#3AC7B6;
+    border:1px solid #1F4A44; background:#12332F;
     padding:4px 9px; border-radius:20px; letter-spacing:1px;
   }
   /* ---------- 页面 ---------- */
-  main { flex:1; padding:16px 16px calc(96px + env(safe-area-inset-bottom,0px)); }
+  main { padding:16px 16px calc(110px + env(safe-area-inset-bottom,0px)); }
   .page { display:none; animation:fadein .25s ease; }
   .page.active { display:block; }
-  @keyframes fadein { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+  @keyframes fadein { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none; } }
   .card {
     background:#1F2844; border:1px solid #2B3557; border-radius:16px;
     padding:18px; margin-bottom:14px;
   }
   .card h3 { font-size:15px; color:#fff; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
-  .card h3 .dot { width:8px; height:8px; border-radius:50%; background:#FF8A65; flex-shrink:0; }
+  .card h3 .dot { width:8px; height:8px; border-radius:50%; background:#FFC85C; flex-shrink:0; }
   .card .sub { font-size:11.5px; color:#939FC4; margin-bottom:12px; }
   .pill { display:inline-block; font-size:10.5px; font-weight:600; padding:3px 10px; border-radius:20px; }
-  .pill.coral { background:#33222B; color:#FF8A65; }
-  .pill.teal  { background:#16332F; color:#3AC7B6; }
   .pill.gold  { background:#332B18; color:#FFC85C; }
+  .pill.teal  { background:#16332F; color:#3AC7B6; }
+  .pill.coral { background:#33222B; color:#FF8A65; }
   /* ---------- 首页 ---------- */
   .hero {
     background:linear-gradient(135deg,#232C52,#1F2844);
-    border:1px solid #34406B; border-radius:18px; padding:20px 18px;
+    border:1px solid #34406B; border-radius:18px; padding:22px 18px;
     margin-bottom:14px; position:relative; overflow:hidden;
   }
   .hero::after {
     content:""; position:absolute; right:-30px; top:-30px;
-    width:120px; height:120px; border-radius:50%;
-    background:radial-gradient(circle,rgba(255,200,92,.12),transparent 70%);
+    width:140px; height:140px; border-radius:50%;
+    background:radial-gradient(circle,rgba(255,200,92,.14),transparent 70%);
   }
-  .hero .hi { font-size:12px; color:#939FC4; margin-bottom:6px; }
-  .hero .name { font-size:24px; font-weight:800; color:#fff; margin-bottom:10px; }
+  .hero .brand { font-size:12px; color:#FFC85C; letter-spacing:3px; margin-bottom:8px; font-weight:700; }
+  .hero .name { font-size:28px; font-weight:900; color:#fff; margin-bottom:10px; }
   .hero .name em { font-style:normal; color:#FFC85C; }
-  .hero .slogan { font-size:13px; line-height:1.7; color:#C9D2EC; }
-  .hero .slogan b.coral{color:#FF8A65} .hero .slogan b.teal{color:#3AC7B6}
-  .stats { display:flex; gap:10px; margin-bottom:14px; }
+  .hero .slogan { font-size:13px; line-height:1.8; color:#C9D2EC; }
+  .hero .slogan b.gold{color:#FFC85C} .hero .slogan b.teal{color:#3AC7B6}
+  .stats { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
   .stat {
-    flex:1; background:#1F2844; border:1px solid #2B3557; border-radius:14px;
+    flex:1; min-width:80px; background:#1F2844; border:1px solid #2B3557; border-radius:14px;
     padding:13px 6px; text-align:center;
   }
   .stat .n { font-size:19px; font-weight:800; }
   .stat .t { font-size:10.5px; color:#939FC4; margin-top:3px; }
-  .stat:nth-child(1) .n{color:#FF8A65} .stat:nth-child(2) .n{color:#3AC7B6} .stat:nth-child(3) .n{color:#FFC85C}
+  .stat:nth-child(1) .n{color:#FFC85C} .stat:nth-child(2) .n{color:#3AC7B6}
+  .stat:nth-child(3) .n{color:#FF8A65} .stat:nth-child(4) .n{color:#A78BFA}
   .vercard {
     display:flex; align-items:center; gap:12px;
     background:#1F2844; border:1px solid #2B3557; border-radius:14px;
@@ -91,30 +92,33 @@
     width:40px; height:40px; border-radius:11px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center; font-size:19px; color:#151C30; font-weight:800;
   }
-  .vercard.coral .ic { background:#FF8A65; } .vercard.teal .ic { background:#3AC7B6; }
+  .vercard.gold .ic { background:#FFC85C; } .vercard.teal .ic { background:#3AC7B6; }
   .vercard .vt { font-size:14.5px; font-weight:700; color:#fff; }
   .vercard .vd { font-size:11px; color:#939FC4; margin-top:2px; }
-  .vercard .arrow { margin-left:auto; color:#5A6690; font-size:16px; }
+  .vercard .arrow { margin-left:auto; color:#5A6690; font-size:18px; }
   .linkbar {
     text-align:center; padding:13px; border-radius:14px;
-    background:#1F2844; border:1px dashed #3A4570; font-size:12.5px; color:#939FC4;
+    background:#1F2844; border:1px dashed #3A4570; font-size:12px; color:#939FC4; line-height:1.7;
   }
-  .linkbar a { color:#FF8A65; text-decoration:none; font-weight:700; }
+  .linkbar a { color:#FFC85C; text-decoration:none; font-weight:700; }
   /* ---------- 情绪守护 ---------- */
   .moods { display:flex; justify-content:space-between; gap:6px; }
   .mood {
     flex:1; aspect-ratio:1; max-width:64px; border-radius:14px;
-    background:#273052; border:1px solid #2B3557; border:none;
+    background:#273052; border:none;
     font-size:26px; cursor:pointer; transition:transform .12s, background .2s;
   }
   .mood:active { transform:scale(.9); }
-  .mood.on { background:#33222B; border-color:#FF8A65; }
+  .mood.on { background:#332B18; border:1px solid #FFC85C; }
   .moodmsg {
     margin-top:12px; font-size:13px; color:#FFC85C; min-height:20px;
     opacity:0; transition:opacity .3s;
   }
   .moodmsg.show { opacity:1; }
-  /* 呼吸舱 */
+  .weekbar { display:flex; gap:5px; margin-top:10px; align-items:flex-end; height:50px; }
+  .weekbar .col { flex:1; background:#3AC7B6; border-radius:4px 4px 0 0; position:relative; min-height:6px; }
+  .weekbar .col.emo { background:#FF8A65; }
+  .weekbar .col .lbl { position:absolute; bottom:-16px; left:0; right:0; text-align:center; font-size:9px; color:#5A6690; }
   .breath-wrap { display:flex; flex-direction:column; align-items:center; padding:6px 0 2px; }
   .breath-ring {
     width:150px; height:150px; border-radius:50%;
@@ -129,77 +133,105 @@
   .btn {
     display:block; width:100%; padding:13px; border:none; border-radius:12px;
     font-size:14.5px; font-weight:700; cursor:pointer; margin-top:14px;
-    background:#FF8A65; color:#151C30; transition:transform .12s, opacity .2s;
+    background:#FFC85C; color:#151C30; transition:transform .12s, opacity .2s;
   }
   .btn:active { transform:scale(.97); }
   .btn.ghost { background:#273052; color:#DCE2F4; border:1px solid #34406B; }
   .btn.teal { background:#3AC7B6; }
-  /* 树洞 */
   textarea {
     width:100%; min-height:84px; resize:none; border:none; outline:none;
     background:#273052; border:1px solid #34406B; border-radius:12px;
     color:#DCE2F4; font-size:13.5px; font-family:inherit; padding:12px;
   }
-  textarea:focus { border-color:#FF8A65; }
+  textarea:focus { border-color:#FFC85C; }
   .hole-item {
     background:#273052; border-radius:12px; padding:12px 14px; margin-top:10px;
     font-size:13px; color:#C9D2EC; line-height:1.6;
   }
   .hole-item .time { font-size:10.5px; color:#5A6690; margin-bottom:4px; }
   .hole-reply {
-    margin-top:8px; font-size:12px; color:#FF8A65;
-    background:#33222B; border-radius:8px; padding:8px 10px;
+    margin-top:8px; font-size:12px; color:#FFC85C;
+    background:#332B18; border-radius:8px; padding:8px 10px;
   }
-  /* 贴士 */
   .tip { font-size:13.5px; color:#C9D2EC; line-height:1.7; }
+  /* ---------- 压力自测 ---------- */
+  .quiz-q { font-size:13.5px; color:#DCE2F4; line-height:1.6; margin-bottom:10px; }
+  .quiz-opt {
+    display:flex; gap:8px; margin-bottom:7px; cursor:pointer;
+    padding:9px 12px; background:#273052; border-radius:10px; font-size:12.5px; color:#C9D2EC;
+    border:1px solid transparent;
+  }
+  .quiz-opt.on { border-color:#FFC85C; background:#332B18; color:#FFC85C; }
+  .quiz-result { font-size:13.5px; color:#FFC85C; line-height:1.7; margin-top:10px; display:none; }
   /* ---------- 创意策划 ---------- */
   .idea-box {
-    min-height:96px; background:#273052; border:1px solid #34406B; border-radius:14px;
+    min-height:100px; background:#273052; border:1px solid #34406B; border-radius:14px;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    padding:14px; text-align:center;
+    padding:16px; text-align:center;
   }
-  .idea-box .combo { font-size:16.5px; font-weight:800; color:#FFC85C; line-height:1.5; }
-  .idea-box .note { font-size:11px; color:#939FC4; margin-top:8px; }
+  .idea-box .combo { font-size:16px; font-weight:800; color:#FFC85C; line-height:1.6; }
+  .idea-box .note { font-size:11px; color:#939FC4; margin-top:10px; }
+  .idea-meta { display:flex; gap:10px; margin-top:12px; justify-content:center; }
+  .idea-meta span { font-size:10.5px; color:#939FC4; background:#1F2844; padding:4px 9px; border-radius:20px; }
   .pop { animation:pop .35s ease; }
   @keyframes pop { 0%{transform:scale(.85);opacity:0} 100%{transform:scale(1);opacity:1} }
-  .poll-opt {
-    margin-top:10px; cursor:pointer;
-  }
-  .poll-opt .plabel {
-    display:flex; justify-content:space-between; font-size:13px; color:#C9D2EC; margin-bottom:5px;
-  }
+  .poll-opt { margin-top:10px; cursor:pointer; }
+  .poll-opt .plabel { display:flex; justify-content:space-between; font-size:13px; color:#C9D2EC; margin-bottom:5px; }
   .poll-opt .pbarbg { height:10px; background:#273052; border-radius:10px; overflow:hidden; }
   .poll-opt .pbar { height:100%; border-radius:10px; background:linear-gradient(90deg,#3AC7B6,#2A8F84); width:0; transition:width .5s ease; }
-  .poll-opt:nth-child(odd) .pbar { background:linear-gradient(90deg,#FF8A65,#C9563A); }
+  .poll-opt:nth-child(odd) .pbar { background:linear-gradient(90deg,#FFC85C,#C9952A); }
+  /* checklist */
+  .cl-item {
+    display:flex; align-items:flex-start; gap:10px; padding:9px 0;
+    border-bottom:1px solid #2B3557; font-size:13px; color:#C9D2EC;
+  }
+  .cl-item:last-child { border-bottom:none; }
+  .cl-check {
+    width:18px; height:18px; border-radius:5px; border:1.5px solid #5A6690;
+    flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-size:12px; color:#151C30; cursor:pointer; margin-top:1px;
+  }
+  .cl-check.on { background:#3AC7B6; border-color:#3AC7B6; }
+  .cl-progress { height:8px; background:#273052; border-radius:10px; overflow:hidden; margin:8px 0 12px; }
+  .cl-progress .fill { height:100%; background:linear-gradient(90deg,#3AC7B6,#2A8F84); width:0; transition:width .3s; }
+  .cl-pct { font-size:11px; color:#939FC4; text-align:right; margin-top:2px; }
+  /* 推文生成 */
+  .copy-area {
+    background:#273052; border:1px solid #34406B; border-radius:12px;
+    padding:14px; font-size:13px; line-height:1.8; color:#C9D2EC; min-height:80px; white-space:pre-wrap;
+  }
   /* ---------- 关于 ---------- */
   .profile { text-align:center; padding:6px 0 2px; }
   .avatar {
     width:74px; height:74px; border-radius:50%; margin:0 auto 12px;
-    background:linear-gradient(135deg,#FF8A65,#E85D3F);
+    background:linear-gradient(135deg,#FFC85C,#E8953F);
     display:flex; align-items:center; justify-content:center;
-    font-size:34px; color:#fff; font-weight:800;
-    box-shadow:0 6px 22px rgba(255,138,101,.35);
+    font-size:30px; color:#151C30; font-weight:900;
+    box-shadow:0 6px 22px rgba(255,200,92,.3);
   }
   .profile .pname { font-size:20px; font-weight:800; color:#fff; }
   .profile .pmeta { font-size:12px; color:#939FC4; margin:5px 0 12px; }
   .qual { list-style:none; }
   .qual li {
     font-size:13px; color:#C9D2EC; padding:9px 0; border-bottom:1px solid #2B3557;
-    display:flex; gap:9px; align-items:baseline;
+    display:flex; gap:10px; align-items:baseline;
   }
   .qual li:last-child { border-bottom:none; }
-  .qual .qd { color:#FFC85C; font-weight:800; flex-shrink:0; }
-  /* ---------- 底部导航 ---------- */
+  .qual .qd { color:#FFC85C; font-weight:800; flex-shrink:0; min-width:44px; }
+  /* ---------- 底部导航（固定吸底） ---------- */
   .tabbar {
-    position:absolute; left:0; right:0; bottom:0;
+    position:fixed; left:50%; transform:translateX(-50%); bottom:0;
+    width:100%; max-width:430px;
     display:flex; background:#121828;
     border-top:1px solid #262F4E;
     padding:8px 6px calc(env(safe-area-inset-bottom,0px) + 8px);
+    z-index:30;
   }
   .tab {
     flex:1; border:none; background:none; cursor:pointer;
     display:flex; flex-direction:column; align-items:center; gap:3px;
     color:#5A6690; font-size:10.5px; font-family:inherit; padding:4px 0;
+    transition:color .2s;
   }
   .tab .ti { font-size:20px; line-height:1; }
   .tab.on { color:#FFC85C; }
@@ -209,44 +241,45 @@
 <body>
 <div id="app">
   <header class="topbar">
-    <div class="appicon">♥</div>
+    <div class="appicon">栖</div>
     <div>
-      <div class="appname">暖心 Helper <span class="v">1.0</span></div>
-      <div class="appslogan">情绪守护 × 创意策划</div>
+      <div class="appname">栖光 <span class="v">LUMEN 1.0</span></div>
+      <div class="appslogan">情绪有栖 · 班级发光</div>
     </div>
-    <span class="live">● LIVE</span>
+    <span class="live">● 试运行</span>
   </header>
 
   <main>
     <!-- ============ 首页 ============ -->
     <section id="page-home" class="page active">
       <div class="hero">
-        <div class="hi">你好，我是</div>
+        <div class="brand">LUMEN · 班级情绪与活动中枢</div>
         <div class="name">范嘉琪<em>。</em></div>
         <div class="slogan">
-          做<b class="coral">心理委员</b>，守护班级的温暖与安全感；<br>
-          做<b class="teal">组宣委员</b>，让班级风采被更多人看见。
+          做<b class="gold">心理委员</b>，让情绪有处可栖；<br>
+          做<b class="teal">组宣委员</b>，让班级被光看见。
         </div>
-        <div style="margin-top:12px">
-          <span class="pill coral">第一志愿 · 心理委员</span>
+        <div style="margin-top:14px">
+          <span class="pill gold">第一志愿 · 心理委员</span>
           <span class="pill teal">第二志愿 · 组宣委员</span>
         </div>
       </div>
 
       <div class="stats">
-        <div class="stat"><div class="n">10+</div><div class="t">年中国舞</div></div>
-        <div class="stat"><div class="n">20+</div><div class="t">场活动组织</div></div>
-        <div class="stat"><div class="n">5+</div><div class="t">类 AI 作品</div></div>
+        <div class="stat"><div class="n">3+</div><div class="t">年班委经验</div></div>
+        <div class="stat"><div class="n">20+</div><div class="t">场活动统筹</div></div>
+        <div class="stat"><div class="n">5+</div><div class="t">类 AI 创作</div></div>
+        <div class="stat"><div class="n">2</div><div class="t">重共情天赋</div></div>
       </div>
 
-      <div class="vercard coral" onclick="go('mood')">
+      <div class="vercard gold" onclick="go('mood')">
         <div class="ic">♥</div>
-        <div><div class="vt">情绪守护模块</div><div class="vd">心情打卡 · 深呼吸舱 · 匿名树洞</div></div>
+        <div><div class="vt">情绪栖息模块</div><div class="vd">心情打卡 · 压力自测 · 呼吸减压 · 匿名树洞</div></div>
         <div class="arrow">›</div>
       </div>
       <div class="vercard teal" onclick="go('plan')">
         <div class="ic">✦</div>
-        <div><div class="vt">创意策划模块</div><div class="vd">灵感引擎 · 团日投票 · 高光共创</div></div>
+        <div><div class="vt">光合策划模块</div><div class="vd">灵感引擎 · 团日投票 · 筹备清单 · 推文生成</div></div>
         <div class="arrow">›</div>
       </div>
 
@@ -256,7 +289,7 @@
       </div>
     </section>
 
-    <!-- ============ 情绪守护 ============ -->
+    <!-- ============ 情绪栖息 ============ -->
     <section id="page-mood" class="page">
       <div class="card">
         <h3><span class="dot"></span>今日心情打卡</h3>
@@ -269,11 +302,24 @@
           <button class="mood" data-m="疲惫">😴</button>
         </div>
         <div class="moodmsg" id="moodmsg"></div>
+        <div style="margin-top:18px">
+          <div style="font-size:11.5px;color:#939FC4;margin-bottom:6px">近 7 天心情分布</div>
+          <div class="weekbar" id="weekbar"></div>
+          <div style="height:16px"></div>
+        </div>
       </div>
 
       <div class="card">
-        <h3><span class="dot" style="background:#3AC7B6"></span>深呼吸减压舱</h3>
-        <div class="sub">4 秒吸气 → 4 秒屏息 → 4 秒呼气，来三轮</div>
+        <h3><span class="dot" style="background:#3AC7B6"></span>压力自测 · 60 秒</h3>
+        <div class="sub">匿名完成，结果仅你可见，可作为自我观察参考</div>
+        <div id="quizBox"></div>
+        <button class="btn ghost" id="quizBtn" onclick="nextQuiz()">开始答题</button>
+        <div class="quiz-result" id="quizResult"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#3AC7B6"></span>呼吸减压舱</h3>
+        <div class="sub">4 秒吸气 → 4 秒屏息 → 4 秒呼气，三轮</div>
         <div class="breath-wrap">
           <div class="breath-ring" id="ring"><span class="phase" id="phase">准备好了吗</span></div>
           <div class="breath-count" id="breathCount"></div>
@@ -283,7 +329,7 @@
 
       <div class="card">
         <h3><span class="dot"></span>匿名树洞</h3>
-        <div class="sub">烦恼投进来，只倾听、不说教，仅保存在你自己的设备上</div>
+        <div class="sub">烦恼投进来，只倾听不说教，仅保存在你的设备上</div>
         <textarea id="holeText" maxlength="200" placeholder="今天有什么想说的……（匿名）"></textarea>
         <button class="btn" onclick="dropHole()">投进树洞 🌳</button>
         <div id="holeList"></div>
@@ -296,22 +342,45 @@
       </div>
     </section>
 
-    <!-- ============ 创意策划 ============ -->
+    <!-- ============ 光合策划 ============ -->
     <section id="page-plan" class="page">
       <div class="card">
         <h3><span class="dot" style="background:#3AC7B6"></span>灵感引擎</h3>
-        <div class="sub">主题 × 形式 × 亮点，一键生成团日新点子</div>
+        <div class="sub">主题 × 形式 × 亮点，一键生成大学生可落地的团日新点子</div>
         <div class="idea-box" id="ideaBox">
           <div class="combo" id="ideaCombo">点击下方按钮<br>生成你的专属团日</div>
           <div class="note" id="ideaNote">灵感不限量 · AI 加持</div>
         </div>
+        <div class="idea-meta" id="ideaMeta"></div>
         <button class="btn teal" onclick="genIdea()">✦ 生成灵感</button>
       </div>
 
       <div class="card">
         <h3><span class="dot" style="background:#3AC7B6"></span>下一场团日，你说了算</h3>
-        <div class="sub">真实投票 · 数据保存在本机 · 当选后全站开放</div>
+        <div class="sub">真实投票 · 数据保存在本机</div>
         <div id="pollList"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#FFC85C"></span>活动筹备清单</h3>
+        <div class="sub">点选自动生成执行清单，勾选实时看进度</div>
+        <select id="actType" style="width:100%;padding:10px;background:#273052;border:1px solid #34406B;border-radius:10px;color:#DCE2F4;font-size:13px;margin-bottom:12px;font-family:inherit">
+          <option value="outdoor">户外团建</option>
+          <option value="party">班级派对</option>
+          <option value="salon">主题沙龙</option>
+          <option value="volunteer">志愿活动</option>
+        </select>
+        <div class="cl-pct" id="clPct">0 / 0</div>
+        <div class="cl-progress"><div class="fill" id="clFill"></div></div>
+        <div id="clList"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#3AC7B6"></span>推文文案生成器</h3>
+        <div class="sub">输入活动关键词，AI 生成公众号开头</div>
+        <input id="kwInput" placeholder="如：中秋汉服夜" style="width:100%;padding:11px;background:#273052;border:1px solid #34406B;border-radius:10px;color:#DCE2F4;font-size:13px;font-family:inherit;margin-bottom:10px">
+        <button class="btn teal" onclick="genCopy()">✦ 生成文案</button>
+        <div class="copy-area" id="copyArea" style="margin-top:12px">点击按钮，在这里看到生成的推文开头～</div>
       </div>
 
       <div class="card">
@@ -329,16 +398,17 @@
         <div class="avatar">范</div>
         <div class="pname">范嘉琪</div>
         <div class="pmeta">河南大学 · 思想政治教育 · 2026 级</div>
-        <span class="pill coral">心理委员候选人 · 第一志愿</span>
+        <span class="pill gold">心理委员候选人 · 第一志愿</span>
         <span class="pill teal">组宣委员候选人 · 第二志愿</span>
       </div>
       <div class="card">
         <h3><span class="dot" style="background:#FFC85C"></span>开发者资质</h3>
         <ul class="qual">
-          <li><span class="qd">10+ 年</span>中国舞训练 · 省市春晚 C 位 · 国际模特巡演</li>
-          <li><span class="qd">20+ 场</span>曾任班长 / 团支书 / 文艺委员，活动策划统筹</li>
+          <li><span class="qd">3+ 年</span>曾任班长 / 团支书 / 文艺委员，熟悉班委运转</li>
+          <li><span class="qd">20+ 场</span>独立策划统筹团日、迎新、义卖等活动</li>
           <li><span class="qd">5+ 类</span>AI 全品类创作：PPT / 网站 / 小游戏 / 音乐，持阿里云认证</li>
           <li><span class="qd">2 合 1</span>巨蟹座 × INFJ 情绪传感器，共情力出厂满格</li>
+          <li><span class="qd">公益</span>阳光义卖发起人，把温暖做成可落地的行动</li>
         </ul>
       </div>
       <div class="card">
@@ -346,20 +416,20 @@
         <div class="sub">合作 / 倾诉 / 拉票，均可联系</div>
         <div class="hole-item" style="text-align:center">
           📧 fanjiaqi66660705@qq.com<br><br>
-          <a href="https://fanjiaqi66660705.github.io/" target="_blank" style="color:#FF8A65;font-weight:700;text-decoration:none">→ 我的个人数字名片</a>
+          <a href="https://fanjiaqi66660705.github.io/" target="_blank" style="color:#FFC85C;font-weight:700;text-decoration:none">→ 我的个人数字名片</a>
         </div>
       </div>
       <div class="linkbar">
-        暖心 Helper 1.0 · 由范嘉琪与 AI 结对开发<br>本程序不联网收集任何数据，请放心使用
+        栖光 LUMEN 1.0 · 由范嘉琪与 AI 结对开发<br>本程序不联网收集任何数据，请放心使用
       </div>
     </section>
   </main>
 
   <nav class="tabbar">
     <button class="tab on" data-page="home" onclick="go('home')"><span class="ti">🏠</span>首页</button>
-    <button class="tab" data-page="mood" onclick="go('mood')"><span class="ti">♥</span>情绪守护</button>
-    <button class="tab" data-page="plan" onclick="go('plan')"><span class="ti">✦</span>创意策划</button>
-    <button class="tab" data-page="about" onclick="go('about')"><span class="ti">😊</span>关于</button>
+    <button class="tab" data-page="mood" onclick="go('mood')"><span class="ti">♥</span>情绪栖息</button>
+    <button class="tab" data-page="plan" onclick="go('plan')"><span class="ti">✦</span>光合策划</button>
+    <button class="tab" data-page="about" onclick="go('about')"><span class="ti">👤</span>关于</button>
   </nav>
 </div>
 
@@ -369,7 +439,7 @@ function go(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.page===name));
-  window.scrollTo({top:0});
+  window.scrollTo({top:0,behavior:'instant'});
 }
 
 /* ================= 心情打卡 ================= */
@@ -388,9 +458,67 @@ document.querySelectorAll('.mood').forEach(b=>{
     const msg=document.getElementById('moodmsg');
     msg.textContent='收到你的【'+m+'】｜ '+moodReplies[m];
     msg.classList.add('show');
-    save('mh_mood',{m:m,t:Date.now()});
+    const arr=JSON.parse(localStorage.getItem('lum_mood')||'[]');
+    arr.push({m:m,t:Date.now()});
+    localStorage.setItem('lum_mood',JSON.stringify(arr.slice(-60)));
+    renderWeek();
   });
 });
+function renderWeek(){
+  const arr=JSON.parse(localStorage.getItem('lum_mood')||'[]');
+  const days=['日','一','二','三','四','五','六'];
+  const now=new Date();
+  const counts={};
+  arr.forEach(r=>{ const d=new Date(r.t); const key=d.getMonth()+'-'+d.getDate(); counts[key]=(counts[key]||0)+1; });
+  let html='';
+  for(let i=6;i>=0;i--){
+    const d=new Date(now); d.setDate(now.getDate()-i);
+    const key=d.getMonth()+'-'+d.getDate();
+    const c=counts[key]||0;
+    const h=Math.max(6, Math.min(50, c*12));
+    const emo = arr.filter(r=>{ const dd=new Date(r.t); return dd.getMonth()===d.getMonth()&&dd.getDate()===d.getDate(); }).some(r=>r.m==='难过'||r.m==='烦躁'||r.m==='疲惫');
+    html+='<div class="col'+(emo?' emo':'')+'" style="height:'+h+'px"><div class="lbl">'+days[d.getDay()]+'</div></div>';
+  }
+  document.getElementById('weekbar').innerHTML=html;
+}
+renderWeek();
+
+/* ================= 压力自测 ================= */
+const quiz=[
+  {q:"近一周，你是否经常感到难以入睡或睡眠质量差？",opts:["从不","偶尔","经常","总是"]},
+  {q:"你是否容易因为小事感到烦躁或情绪低落？",opts:["从不","偶尔","经常","总是"]},
+  {q:"你是否觉得学业或人际压力让你喘不过气？",opts:["从不","偶尔","经常","总是"]},
+  {q:"你是否对曾经喜欢的事失去了兴趣？",opts:["从不","偶尔","经常","总是"]},
+  {q:"你是否能从朋友或家人那里获得支持？",opts:["总是能","偶尔能","很少","几乎不能"]}
+];
+let qi=0, qscore=0, qdone=false;
+function nextQuiz(){
+  if(qdone){ qi=0; qscore=0; qdone=false; document.getElementById('quizResult').style.display='none'; }
+  if(qi>=quiz.length){ showQuizResult(); return; }
+  const it=quiz[qi];
+  const box=document.getElementById('quizBox');
+  box.innerHTML='<div class="quiz-q">'+(qi+1)+'. '+it.q+'</div>'+
+    it.opts.map((o,i)=>'<div class="quiz-opt" onclick="pickOpt(this,'+i+')">'+o+'</div>').join('');
+  document.getElementById('quizBtn').textContent='下一题';
+}
+function pickOpt(el,i){
+  document.querySelectorAll('.quiz-opt').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  qscore += i;
+  setTimeout(()=>{ qi++; nextQuiz(); },300);
+}
+function showQuizResult(){
+  qdone=true;
+  const r=document.getElementById('quizResult');
+  let txt='';
+  if(qscore<=4) txt='🌿 你的状态很轻盈，继续保持这样的节奏，多晒晒阳光。';
+  else if(qscore<=9) txt='☁️ 有一些压力信号，试试今晚的深呼吸舱，给自己放个小假。';
+  else if(qscore<=14) txt='🌧️ 压力有点大了，把烦恼写进树洞，或找我聊聊，我一直都在。';
+  else txt='🫂 这段时间你辛苦了，请一定找辅导员或心理老师聊聊，寻求专业支持不是软弱。';
+  r.textContent='得分：'+qscore+' / 16 ｜ '+txt;
+  r.style.display='block';
+  document.getElementById('quizBtn').textContent='重新测试';
+}
 
 /* ================= 深呼吸 ================= */
 let breathTimer=null;
@@ -408,7 +536,7 @@ function toggleBreath(){
     cnt.textContent='第 '+(round+1)+' / 3 轮';
     pi++;
     if(pi>=phases.length){ pi=0; round++; }
-    if(round>=3){ setTimeout(()=>{ stopBreath(); cnt.textContent='完成 ✨ 感觉好些了吗？'; },4000); breathTimer=setTimeout(step,9e9); return; }
+    if(round>=3){ setTimeout(()=>{ stopBreath(); cnt.textContent='完成 ✨ 感觉好些了吗？'; },4000); return; }
     breathTimer=setTimeout(step,secs*1000);
   }
   btn.textContent='结束';
@@ -424,8 +552,8 @@ function stopBreath(){
 }
 
 /* ================= 匿名树洞 ================= */
-function save(k,v){ const a=JSON.parse(localStorage.getItem(k)||'[]'); a.push(v); localStorage.setItem(k,JSON.stringify(a)); }
 function load(k){ return JSON.parse(localStorage.getItem(k)||'[]'); }
+function savePush(k,v){ const a=load(k); a.push(v); localStorage.setItem(k,JSON.stringify(a)); }
 const autoReplies=[
   "树洞收到啦 🌳 你已经勇敢地迈出第一步了。",
   "谢谢你愿意说给我听，这不是小事。",
@@ -437,7 +565,7 @@ function dropHole(){
   const ta=document.getElementById('holeText');
   const v=ta.value.trim();
   if(!v){ alert('写点什么再投吧～'); return; }
-  save('mh_hole',{t:Date.now(),text:v,reply:autoReplies[Math.floor(Math.random()*autoReplies.length)]});
+  savePush('lum_hole',{t:Date.now(),text:v,reply:autoReplies[Math.floor(Math.random()*autoReplies.length)]});
   ta.value='';
   renderHole();
 }
@@ -449,7 +577,7 @@ function fmt(t){
   return new Date(t).toLocaleDateString();
 }
 function renderHole(){
-  const list=load('mh_hole').slice(-20).reverse();
+  const list=load('lum_hole').slice(-20).reverse();
   const el=document.getElementById('holeList');
   el.innerHTML=list.map(h=>
     '<div class="hole-item"><div class="time">投递于 '+fmt(h.t)+'</div>'+esc(h.text)+
@@ -465,31 +593,46 @@ const tips=[
   "想家是爱的证据，不是软弱。给爸妈发条语音吧。",
   "睡前 1 小时放下手机，深呼吸 3 轮，入睡速度 +50%。",
   "和朋友闹别扭了？先描述感受，再讲道理：'我觉得…'比'你怎么…'更近一步。",
-  "每天记录一件小确幸，一个月后你会感谢现在的自己。"
+  "每天记录一件小确幸，一个月后你会感谢现在的自己。",
+  "感到焦虑时，试试「5-4-3-2-1」：说出5个看到的、4个听到的、3个摸到的、2个闻到的、1个尝到的。"
 ];
 let tipIdx=Math.floor(Math.random()*tips.length);
 function nextTip(){ tipIdx=(tipIdx+1)%tips.length; document.getElementById('tipText').textContent='💡 '+tips[tipIdx]; }
 nextTip();
 
-/* ================= 灵感引擎 ================= */
-const themes=["中秋","国庆","跨年","期末解压","汉服国风","星空露营","运动会","毕业季","节气","周年庆"];
-const forms=["剧本杀","主题晚会","城市定向","露天电影","手作工坊","荧光夜跑","快闪","换装游园","班级综艺","密室闯关"];
-const highs=["汉服打卡","AI 合影墙","盲盒交换","班级歌单共创","时光信箱","荧光涂鸦","零食拍卖会","手势舞挑战","电影复刻海报","心愿漂流瓶"];
+/* ================= 灵感引擎（大学生可落地活动） ================= */
+const themes=["中秋","国庆","期末解压","春日踏青","毕业季","迎新破冰","校园文化节","节气","周年庆","学雷锋月"];
+const forms=["校园定向越野","露天电影夜","主题手作工坊","班级综艺之夜","城市City Walk","汉服游园","密室闯关","剧本杀","荧光夜跑","美食分享会"];
+const highs=["AI合影墙","班级歌单共创","时光信箱","盲盒交换","手势舞挑战","心愿漂流瓶","电影复刻海报","零食拍卖会","荧光涂鸦","手写信互赠"];
+const metaMap={
+  "户外团建":{cost:"¥50-150/人",ppl:"10-30人",dur:"半天"},
+  "校园定向越野":{cost:"¥0-30/人",ppl:"15-40人",dur:"2小时"},
+  "城市City Walk":{cost:"¥30-80/人",ppl:"8-20人",dur:"半天"},
+  "荧光夜跑":{cost:"¥10-30/人",ppl:"20-50人",dur:"1.5小时"},
+  "主题手作工坊":{cost:"¥30-60/人",ppl:"10-25人",dur:"2小时"},
+  "美食分享会":{cost:"¥20-50/人",ppl:"10-30人",dur:"2小时"},
+  "露天电影夜":{cost:"¥10-30/人",ppl:"15-40人",dur:"2.5小时"},
+  "班级综艺之夜":{cost:"¥20-60/人",ppl:"20-50人",dur:"3小时"},
+  "汉服游园":{cost:"¥30-100/人",ppl:"10-30人",dur:"半天"},
+  "密室闯关":{cost:"¥50-120/人",ppl:"6-12人",dur:"2小时"},
+  "剧本杀":{cost:"¥50-100/人",ppl:"6-10人",dur:"3小时"}
+};
 function genIdea(){
-  const c=themes[Math.floor(Math.random()*themes.length)]
-        +" × "+forms[Math.floor(Math.random()*forms.length)]
-        +" × "+highs[Math.floor(Math.random()*highs.length)];
-  const box=document.getElementById('ideaBox');
+  const t=themes[Math.floor(Math.random()*themes.length)];
+  const f=forms[Math.floor(Math.random()*forms.length)];
+  const h=highs[Math.floor(Math.random()*highs.length)];
   const el=document.getElementById('ideaCombo');
-  el.innerHTML=c;
+  el.innerHTML=t+' · '+f+'<br><span style="color:#3AC7B6;font-size:13px;font-weight:600">亮点：'+h+'</span>';
   el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
-  document.getElementById('ideaNote').textContent='灵感编号 #'+String(Math.floor(Math.random()*900)+100)+' · 交给组宣委员，马上落地';
+  document.getElementById('ideaNote').textContent='灵感编号 #'+String(Math.floor(Math.random()*900)+100);
+  const meta=metaMap[f]||{cost:"¥20-80/人",ppl:"10-30人",dur:"2小时"};
+  document.getElementById('ideaMeta').innerHTML='<span>💰 '+meta.cost+'</span><span>👥 '+meta.ppl+'</span><span>⏱️ '+meta.dur+'</span>';
 }
 
 /* ================= 团日投票 ================= */
-const pollData=["桌游之夜","露天电影","荧光夜跑","手作工坊"];
+const pollData=["校园定向越野","露天电影夜","手作工坊","City Walk"];
 function renderPoll(){
-  const votes=JSON.parse(localStorage.getItem('mh_poll')||'{}');
+  const votes=JSON.parse(localStorage.getItem('lum_poll')||'{}');
   const total=pollData.reduce((s,o)=>s+(votes[o]||0),0)||1;
   document.getElementById('pollList').innerHTML=pollData.map(o=>{
     const n=votes[o]||0, pct=Math.round(n/total*100);
@@ -499,12 +642,59 @@ function renderPoll(){
   }).join('');
 }
 function vote(o){
-  const votes=JSON.parse(localStorage.getItem('mh_poll')||'{}');
+  const votes=JSON.parse(localStorage.getItem('lum_poll')||'{}');
   votes[o]=(votes[o]||0)+1;
-  localStorage.setItem('mh_poll',JSON.stringify(votes));
+  localStorage.setItem('lum_poll',JSON.stringify(votes));
   renderPoll();
 }
 renderPoll();
+
+/* ================= 活动筹备清单 ================= */
+const checklists={
+  outdoor:["确定时间与天气备选方案","统计参与人数","规划路线/场地","准备饮用水和零食","购买应急药品","预约摄影/记录人员","发布活动通知","活动后收集反馈"],
+  party:["确定主题与场地","制作嘉宾/节目流程","采购物料和装饰","安排音响设备","准备零食饮料","邀请主持人","现场布置分工","活动后复盘推文"],
+  salon:["确定主题与嘉宾","准备场地与桌椅","制作宣传海报","预约投影仪/话筒","准备签到表","准备互动材料","现场引导","活动后整理照片"],
+  volunteer:["对接志愿机构","明确服务内容","统计志愿者名单","准备服装/标识","岗前简短培训","购买保险(如需要)","安排交通","活动后证书与总结"]
+};
+function renderChecklist(){
+  const type=document.getElementById('actType').value;
+  const items=checklists[type];
+  const done=JSON.parse(localStorage.getItem('lum_cl_'+type)||'{}');
+  document.getElementById('clList').innerHTML=items.map((it,i)=>
+    '<div class="cl-item"><div class="cl-check '+(done[i]?'on':'')+'" onclick="toggleCl(\''+type+'\','+i+')">'+(done[i]?'✓':'')+'</div>'+esc(it)+'</div>').join('');
+  updateClProgress();
+}
+function toggleCl(type,i){
+  const key='lum_cl_'+type;
+  const done=JSON.parse(localStorage.getItem(key)||'{}');
+  done[i]=!done[i]; if(!done[i]) delete done[i];
+  localStorage.setItem(key,JSON.stringify(done));
+  renderChecklist();
+}
+function updateClProgress(){
+  const type=document.getElementById('actType').value;
+  const items=checklists[type];
+  const done=JSON.parse(localStorage.getItem('lum_cl_'+type)||'{}');
+  const n=Object.keys(done).length;
+  const pct=Math.round(n/items.length*100);
+  document.getElementById('clPct').textContent=n+' / '+items.length;
+  document.getElementById('clFill').style.width=pct+'%';
+}
+document.getElementById('actType').addEventListener('change',renderChecklist);
+renderChecklist();
+
+/* ================= 推文文案生成 ================= */
+const copyTemplates=[
+  (k)=>`【${k}｜班级限定】\n\n当晚风遇见${k}，当我们遇见彼此。\n这一次，栖光与你一起，把普通的一天过成值得收藏的回忆。\n\n⏰ 时间：本周××\n📍 地点：××\n✨ 人数：限××人，先到先得\n\n名额有限，扫码报名，我们现场见。`,
+  (k)=>`📣 栖光活动预告｜${k}\n\n据说，大学里最难忘的不是某节课，而是和一群有趣的人做过的某件疯狂小事。\n\n这次的主角是——${k}。\n我们准备了 ××、×× 和 ××，就差一个你。\n\n🕖 本周×× 晚 19:00\n📍 ××\n🎫 免费 / 班费支持\n\n评论区扣「1」锁定名额。`,
+  (k)=>`🌙 ${k} · 来赴一场只属于我们的约\n\n你有多久没有认真抬头看过月亮了？\n这一次，不用赶 deadline，不用想绩点。\n只需要带上好心情，和我们一起，在${k}里浪费一整个晚上。\n\n时间｜本周××\n地点｜××\n报名｜私信栖光\n\n等你。`
+];
+function genCopy(){
+  const k=document.getElementById('kwInput').value.trim();
+  if(!k){ alert('先输入活动关键词～'); return; }
+  const tpl=copyTemplates[Math.floor(Math.random()*copyTemplates.length)];
+  document.getElementById('copyArea').textContent=tpl(k);
+}
 </script>
 </body>
 </html>
