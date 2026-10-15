@@ -48,7 +48,7 @@
     { source: '购买意愿', target: '溢价支付', r: 0.45 }
   ];
 
-  var chartMap = echarts.init(document.getElementById('chart-map'), null, { renderer: 'svg' });
+  var chartMap = echarts.init(document.getElementById('chart-map'));
   chartMap.setOption({
     animation: false,
     textStyle: { fontFamily: CJK },
@@ -113,7 +113,7 @@
   window.addEventListener('resize', function () { chartMap.resize(); });
 
   /* ============ 图 2　三类消费人群六维画像雷达对比 ============ */
-  var chartRadar = echarts.init(document.getElementById('chart-radar'), null, { renderer: 'svg' });
+  var chartRadar = echarts.init(document.getElementById('chart-radar'));
   chartRadar.setOption({
     animation: false,
     textStyle: { fontFamily: CJK },
@@ -168,7 +168,7 @@
     { name: '年龄', w: 0.042, sig: 'n.s.' }
   ];
 
-  var chartWeight = echarts.init(document.getElementById('chart-weight'), null, { renderer: 'svg' });
+  var chartWeight = echarts.init(document.getElementById('chart-weight'));
   chartWeight.setOption({
     animation: false,
     textStyle: { fontFamily: CJK },
@@ -233,7 +233,7 @@
     }
   }
 
-  var chartHeat = echarts.init(document.getElementById('chart-heat'), null, { renderer: 'svg' });
+  var chartHeat = echarts.init(document.getElementById('chart-heat'));
   chartHeat.setOption({
     animation: false,
     textStyle: { fontFamily: CJK },
