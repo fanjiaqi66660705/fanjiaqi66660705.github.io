@@ -2,6 +2,12 @@
 // 说明：以下全部为「示意数据」，用于演示呈现方式，不代表任何真实调研统计值。
 
 (function () {
+  if (typeof echarts === 'undefined') {
+    document.querySelectorAll('.chart-container').forEach(function (el) {
+      el.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:8rem 1rem;font-size:13px;line-height:1.8">图表未加载成功<br>请刷新页面，或更换网络/浏览器后重试</p>';
+    });
+    return;
+  }
   var style = getComputedStyle(document.documentElement);
   var accent = style.getPropertyValue('--accent').trim();
   var accent2 = style.getPropertyValue('--accent2').trim();
