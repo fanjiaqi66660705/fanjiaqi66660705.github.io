@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>通用问卷数据分析工作台 · 一张投名状｜基础统计 · 交叉分析 · 图表产出</title>
+<style>
+:root{
+  --bg:#F6F6F2;
+  --panel:#FFFFFF;
+  --ink:#151A17;
+  --muted:#5C655E;
+  --line:#E4E3DA;
+  --line2:#EDECE4;
+  --accent:#0F6B57;
+  --accent-soft:#E4F0EB;
+  --amber:#B4571F;
+  --amber-soft:#F6E9DE;
+  --blue:#2E4B7A;
+  --shadow:0 1px 2px rgba(20,26,22,.04),0 10px 28px -18px rgba(20,26,22,.35);
+  --font-sans:"PingFang SC","Hiragino Sans GB","Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  --font-mono:"SFMono-Regular",Consolas,"JetBrains Mono",Menlo,"PingFang SC","Microsoft YaHei",monospace;
+  --maxw:1120px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);font-size:16px;line-height:1.74;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 2rem}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------- top nav ---------- */
+.nav{position:sticky;top:0;z-index:50;background:rgba(246,246,242,.9);backdrop-filter:saturate(1.4) blur(8px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:1.25rem;height:54px}
+.nav .brand{font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.nav .brand i{color:var(--accent);font-style:normal}
+.nav .links{display:flex;gap:.25rem;margin-left:auto;flex-wrap:wrap}
+.nav .links a{font-size:.82rem;color:var(--muted);padding:.35rem .6rem;border-radius:6px}
+.nav .links a:hover{background:var(--accent-soft);color:var(--accent);text-decoration:none}
+
+/* ---------- cover ---------- */
+.cover{padding:4.6rem 0 2.6rem;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 1.3rem}
+.cover h1{font-size:clamp(2rem,4.6vw,3.05rem);line-height:1.16;letter-spacing:-.02em;font-weight:700;margin:0 0 1rem}
+.cover h1 em{font-style:normal;color:var(--accent)}
+.cover .who{color:var(--muted);font-size:.95rem;margin:0 0 1.4rem}
+.cover .lead{font-size:1.1rem;line-height:1.8;max-width:52rem;margin:0 0 2rem;color:#2A312C}
+.cover .lead b{color:var(--ink)}
+.triad{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.2rem}
+.triad .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.15rem 1.25rem;box-shadow:var(--shadow)}
+.triad .n{font-family:var(--font-mono);font-size:.68rem;font-weight:700;letter-spacing:.1em;color:var(--amber);display:block;margin-bottom:.55rem}
+.triad .t{font-weight:700;font-size:1.02rem;margin:0 0 .3rem}
+.triad .d{font-size:.83rem;color:var(--muted);margin:0;line-height:1.6}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;border-top:1px solid var(--line);padding-top:1.5rem}
+.stats .s .v{font-family:var(--font-mono);font-size:1.55rem;font-weight:700;line-height:1.1;letter-spacing:-.02em}
+.stats .s .v small{font-size:.85rem;font-weight:600;color:var(--muted);margin-left:2px}
+.stats .s .k{font-size:.78rem;color:var(--muted);margin-top:.35rem}
+
+/* ---------- sections ---------- */
+section{padding:3.3rem 0 0}
+h2{font-size:1.55rem;font-weight:700;letter-spacing:-.01em;margin:0 0 .55rem;padding-top:1rem;border-top:2px solid var(--accent);display:flex;align-items:baseline;gap:.85rem;flex-wrap:wrap}
+h2 .num{font-family:var(--font-mono);font-size:.76rem;font-weight:700;color:var(--accent);letter-spacing:.08em}
+h3{font-size:1rem;font-weight:700;margin:1.9rem 0 .55rem;color:var(--accent)}
+p{margin:0 0 1rem}
+.lead{font-size:1rem;color:var(--muted);max-width:56rem}
+ul.plain{margin:0 0 1rem;padding-left:1.15rem;color:var(--muted)}
+ul.plain li{margin-bottom:.4rem}
+ul.plain b{color:var(--ink)}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.3rem 1.4rem;box-shadow:var(--shadow);margin:1.2rem 0}
+.note{background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:1rem 1.2rem;margin:1.2rem 0;font-size:.88rem;color:#374339;line-height:1.7}
+.note b{color:var(--ink)}
+.note.warn{background:var(--amber-soft);border-left-color:var(--amber)}
+
+/* ---------- tables ---------- */
+.table-wrap{overflow-x:auto;margin:1rem 0;border:1px solid var(--line);border-radius:10px;background:#fff}
+table{border-collapse:collapse;width:100%;font-size:.85rem;min-width:560px}
+thead th{background:#FAFAF7;text-align:left;font-weight:700;font-size:.78rem;letter-spacing:.02em;padding:.6rem .75rem;border-bottom:2px solid var(--accent);white-space:nowrap}
+tbody td{padding:.55rem .75rem;border-bottom:1px solid var(--line2);vertical-align:top;line-height:1.55}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FCFCFA}
+td.dim{font-weight:700;color:var(--accent);white-space:nowrap}
+.num-cell{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+tr.total td{font-weight:700;background:#FAFAF7}
+caption{caption-side:top;text-align:left;font-size:.78rem;color:var(--muted);padding:0 0 .45rem}
+.pill{display:inline-block;padding:1px 9px;border-radius:20px;font-size:.73rem;font-weight:700}
+.pill.hi{background:var(--accent-soft);color:var(--accent)}
+.pill.lo{background:#EFEEE9;color:var(--muted)}
+.pill.sig{background:var(--accent);color:#fff}
+.pill.ns{background:#E9E8E2;color:var(--muted)}
+
+/* ---------- controls ---------- */
+.controls{display:flex;flex-wrap:wrap;gap:.9rem 1.4rem;align-items:flex-end;margin:0 0 1.1rem;padding:1rem 1.1rem;background:#FAFAF7;border:1px solid var(--line);border-radius:10px}
+.field{display:flex;flex-direction:column;gap:.35rem}
+.field label{font-size:.75rem;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.field select{appearance:none;font-family:var(--font-sans);font-size:.86rem;color:var(--ink);background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%235C655E'/></svg>") no-repeat right .7rem center;border:1px solid var(--line);border-radius:8px;padding:.5rem 2rem .5rem .7rem;min-width:13rem;cursor:pointer}
+.field select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.seg{display:inline-flex;background:#EFEEE9;border-radius:9px;padding:3px;gap:3px}
+.seg button{border:0;background:transparent;font-family:var(--font-sans);font-size:.82rem;font-weight:600;color:var(--muted);padding:.4rem .85rem;border-radius:7px;cursor:pointer}
+.seg button.on{background:#fff;color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+/* ---------- chi square result ---------- */
+.chi{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin:1rem 0 0}
+.chi .b{background:#FAFAF7;border:1px solid var(--line);border-radius:10px;padding:.85rem 1rem}
+.chi .b .k{font-size:.74rem;color:var(--muted);margin-bottom:.3rem}
+.chi .b .v{font-family:var(--font-mono);font-size:1.25rem;font-weight:700;letter-spacing:-.01em}
+.chi .b.hit{background:var(--accent);border-color:var(--accent)}
+.chi .b.hit .k{color:rgba(255,255,255,.8)}
+.chi .b.hit .v{color:#fff}
+.concl{background:#FAFAF7;border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:0 8px 8px 0;padding:.95rem 1.15rem;margin:1rem 0 0;font-size:.9rem;line-height:1.7}
+.concl b{color:var(--amber)}
+
+/* ---------- charts ---------- */
+.chart{background:#fff;border:1px solid var(--line);border-radius:10px;padding:1rem .6rem .4rem;margin:1rem 0;overflow-x:auto}
+.chart svg{display:block;width:100%;height:auto;min-width:520px}
+.chart-cap{font-size:.78rem;color:var(--muted);padding:.2rem 1rem .6rem}
+svg text{font-family:var(--font-sans)}
+svg .ax{fill:var(--muted);font-size:11px}
+svg .vl{fill:var(--ink);font-size:11px;font-weight:700;font-family:var(--font-mono)}
+svg .grid{stroke:var(--line2);stroke-width:1}
+svg .axis{stroke:#C9C8C0;stroke-width:1}
+
+/* ---------- delivery / commitment ---------- */
+.timeline{list-style:none;margin:1rem 0;padding:0}
+.timeline li{position:relative;padding:0 0 1.1rem 1.6rem;border-left:2px solid var(--line)}
+.timeline li:last-child{border-left-color:transparent;padding-bottom:0}
+.timeline li::before{content:"";position:absolute;left:-7px;top:.35rem;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.timeline .st{font-family:var(--font-mono);font-size:.75rem;font-weight:700;color:var(--accent);letter-spacing:.04em}
+.timeline .tt{font-weight:700;margin:.1rem 0 .2rem}
+.timeline .dd{font-size:.85rem;color:var(--muted);margin:0}
+.pledge{background:#121A16;color:#E8EFEA;border-radius:12px;padding:1.6rem 1.7rem;margin:1.4rem 0}
+.pledge h3{color:#7FD3B4;margin-top:0}
+.pledge p{color:#C9D6CE}
+.pledge .big{font-size:1.22rem;font-weight:700;color:#fff;line-height:1.6;margin:.3rem 0 1rem}
+.pledge .big em{font-style:normal;color:#7FD3B4}
+.foot{border-top:1px solid var(--line);margin-top:2.6rem;padding:1.6rem 0 3.4rem;color:var(--muted);font-size:.82rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+
+/* ---------- responsive ---------- */
+@media (max-width:860px){
+  .wrap{padding:0 1.2rem}
+  .triad{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr);gap:1.2rem}
+  .chi{grid-template-columns:repeat(2,1fr)}
+  .nav .links{display:none}
+}
+@media print{
+  .nav,.pledge{display:none}
+  body{background:#fff}
+  section{padding-top:1.6rem}
+  .chart svg{min-width:0}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <span class="brand">问卷数据分析工作台<i>·</i>投名状</span>
+    <span class="links">
+      <a href="#need">需求回应</a>
+      <a href="#data">数据说明</a>
+      <a href="#clean">清洗与信度</a>
+      <a href="#desc">基础统计</a>
+      <a href="#cross">交叉分析</a>
+      <a href="#charts">图表产出</a>
+      <a href="#promise">交付与承诺</a>
+    </span>
+  </div>
+</nav>
+
+<header class="cover">
+  <div class="wrap">
+    <p class="eyebrow">通用问卷数据分析工作台 · 可离线运行</p>
+    <h1>把「会 SPSS」变成<em>看得见的结果</em></h1>
+    <p class="who">作者：范嘉琪　·　面向挑战杯哲学社会科学社会调查赛道</p>
+    <p class="lead">你说要的是三件事：<b>基础统计</b>、<b>交叉分析</b>、<b>产出图表</b>，且<b>不中途退出</b>。<br>
+    与其用文字说自己会，不如直接交出一台<b>能跑完整流程的工作台</b>：选变量、出三线表、算卡方、生成论文用图，全部当场可交互。下面每一节都对应一个 SPSS 操作环节，也对应我能交付的东西。</p>
+
+    <div class="triad">
+      <div class="card">
+        <span class="n">01 · 基础统计</span>
+        <p class="t">频数 · 集中 · 离散</p>
+        <p class="d">频数分布表、均值/中位数/众数/标准差/偏度，多重响应（多选题）频率，格式对齐 SPSS 输出，可直接粘贴进论文。</p>
+      </div>
+      <div class="card">
+        <span class="n">02 · 交叉分析</span>
+        <p class="t">列联表 · 卡方检验</p>
+        <p class="d">任选两个变量做交叉表，自动计算频数、行%/列%、Pearson 卡方、自由度、p 值与 Cramér's V，并给出一句话结论。</p>
+      </div>
+      <div class="card">
+        <span class="n">03 · 图表产出</span>
+        <p class="t">论文级可视化</p>
+        <p class="d">柱状、堆积百分比、环形、雷达、箱线五类图，矢量渲染不失真，配色统一，可整段复制到论文或答辩 PPT。</p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="s"><div class="v mono">240</div><div class="k">示例样本量 N</div></div>
+      <div class="s"><div class="v mono">17</div><div class="k">问卷变量</div></div>
+      <div class="s"><div class="v mono">4</div><div class="k">量表维度</div></div>
+      <div class="s"><div class="v mono">5</div><div class="k">图表类型</div></div>
+      <div class="s"><div class="v mono">6</div><div class="k">交付物</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 需求回应 ============ -->
+<section id="need">
+  <div class="wrap">
+    <h2><span class="num">00</span>先逐条回应你的招募条件</h2>
+    <p class="lead">我把招募信息拆成六条，逐条说明我怎么对接——这一节不写空话，只写具体动作。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:34%">你的招募条件</th><th>我的对接方式</th></tr></thead>
+        <tbody>
+          <tr><td class="dim">挑战杯社科社会调查赛道</td><td>本工作台完全按社科问卷调查的分析逻辑构建：变量分定类/定序/定距，量表按维度计分，分析路径贴合实证论文写法。</td></tr>
+          <tr><td class="dim">已对接指导老师</td><td>我只做数据这一环，不改动论文框架与理论假设；老师若有指定变量或检验，按老师口径执行，输出结果留痕可复核。</td></tr>
+          <tr><td class="dim">备有往年问卷数据</td><td>工作台的引擎是数据无关的：把你现有的 <span class="mono">.sav / .xlsx</span> 按变量字典映射进来，同一套流程即可复现，无需重新发问卷。</td></tr>
+          <tr><td class="dim">已有论文雏形</td><td>我产出的是「可直接填空」的表格与图：三线表、交叉分析表、结论句，按你论文的变量名对齐，减少你二次整理。</td></tr>
+          <tr><td class="dim">会 SPSS：基础统计 / 交叉分析 / 产出图表</td><td>就是本页三大模块，全部可交互验证；每个模块都标注了对应的 SPSS 菜单路径与输出文件。</td></tr>
+          <tr><td class="dim">要求不中途退出</td><td>文末给出分阶段交付清单与承诺书，把「不退出」写成分时间节点的可检查条款。</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 数据说明 ============ -->
+<section id="data">
+  <div class="wrap">
+    <h2><span class="num">01</span>问卷结构与变量字典</h2>
+    <p class="lead">开跑之前先把问卷「翻译」成变量视图——这是 SPSS 里第一件该做的事，也是区分业余与专业的地方。下面是一份通用社科问卷的结构（不绑定具体主题，任何问卷都可套用这套框架）。</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>表 1　变量字典（对应 SPSS「变量视图」）</caption>
+        <thead><tr><th>变量</th><th>题项</th><th>测量层次</th><th>取值</th><th>SPSS 设定</th></tr></thead>
+        <tbody>
+          <tr><td class="dim">Q1 性别</td><td>受访者性别</td><td>定类 Nominal</td><td>男 / 女</td><td class="mono">数值 1–2，值标签</td></tr>
+          <tr><td class="dim">Q2 年龄段</td><td>所属年龄段</td><td>定序 Ordinal</td><td>18–25 / 26–35 / 36–45 / 46–55 / 56+</td><td class="mono">数值 1–5，值标签</td></tr>
+          <tr><td class="dim">Q3 受教育程度</td><td>最高学历</td><td>定序 Ordinal</td><td>初中及以下…硕士及以上</td><td class="mono">数值 1–5，值标签</td></tr>
+          <tr><td class="dim">Q4 常住地类型</td><td>城镇 / 农村</td><td>定类 Nominal</td><td>城镇 / 农村</td><td class="mono">数值 1–2，值标签</td></tr>
+          <tr><td class="dim">Q5 个人月收入</td><td>税后月收入</td><td>定序 Ordinal</td><td>四档区间</td><td class="mono">数值 1–4，值标签</td></tr>
+          <tr><td class="dim">Q6 参与频率</td><td>近一年参与相关活动频率</td><td>定序 Ordinal</td><td>从不…总是</td><td class="mono">数值 1–5，值标签</td></tr>
+          <tr><td class="dim">Q7 认知度</td><td>认知量表 C1–C3</td><td>定距（量表）Scale</td><td>1–5 李克特</td><td class="mono">3 题求均值 → 维度分</td></tr>
+          <tr><td class="dim">Q8 认同度</td><td>态度量表 A1–A3</td><td>定距（量表）Scale</td><td>1–5 李克特</td><td class="mono">3 题求均值 → 维度分</td></tr>
+          <tr><td class="dim">Q9 参与意愿</td><td>意愿量表 I1–I3</td><td>定距（量表）Scale</td><td>1–5 李克特</td><td class="mono">3 题求均值 → 维度分</td></tr>
+          <tr><td class="dim">Q10 满意度</td><td>满意度量表 S1–S2</td><td>定距（量表）Scale</td><td>1–5 李克特</td><td class="mono">2 题求均值 → 维度分</td></tr>
+          <tr><td class="dim">Q11 信息渠道</td><td>获取信息主要渠道（多选）</td><td>多重响应 Multiple</td><td>6 个选项</td><td class="mono">多重响应集，二分编码</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note warn">
+      <b>关于示例数据：</b>本工作台内置 240 份<b>算法生成的仿真问卷数据</b>，用于演示完整分析流程与交互效果（数据间刻意植入了学历→认知→意愿的弱相关结构，便于展示交叉分析的显著性）。<b>接入你往年的真实问卷数据后，下面每一个表格与图表都会由同一套引擎重新计算</b>，方法完全一致。我不拿仿真数据冒充真实结论。
+    </div>
+
+    <h3>数据清洗与预处理清单</h3>
+    <ul class="plain">
+      <li><b>缺失值处理：</b>单选/量表题按「有效百分比」剔除，多选题按「个案百分比」处理，缺失率达 10% 的个案单独标注。</li>
+      <li><b>反向题重编码：</b>若含反向计分题，用 <span class="mono">6 − 原始值</span> 反转后再纳入维度均值。</li>
+      <li><b>变量重编码：</b>连续/量表变量按阈值分组（低/中/高），便于与人口学变量做交叉。</li>
+      <li><b>维度得分：</b>用「计算变量」求各维度题项均值，得到 4 个可与人口学变量做分析的标准化维度。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 清洗与信度 ============ -->
+<section id="clean">
+  <div class="wrap">
+    <h2><span class="num">02</span>信度检验（Cronbach's α）</h2>
+    <p class="lead">量表能不能用，先看信度。下面是对四个维度的内部一致性检验，由本页引擎实时计算（对应 SPSS：<span class="mono">分析 → 度量 → 可靠性分析</span>）。</p>
+    <div class="table-wrap">
+      <table>
+        <caption>表 2　各维度信度检验（Cronbach's α）</caption>
+        <thead><tr><th>维度</th><th>题项数 k</th><th class="num-cell">Cronbach's α</th><th>题项</th><th>判读</th></tr></thead>
+        <tbody id="alphaBody"></tbody>
+      </table>
+    </div>
+    <div class="note"><b>判读标准：</b>α ≥ 0.9 极佳，0.8–0.9 良好，0.7–0.8 可接受，0.6–0.7 勉强可用。α 低于 0.7 的维度需回到题目表述修订，或考虑删题。</div>
+  </div>
+</section>
+
+<!-- ============ 基础统计 ============ -->
+<section id="desc">
+  <div class="wrap">
+    <h2><span class="num">03</span>基础统计：频数与描述统计</h2>
+    <p class="lead">选任意一个变量，即时得到它的分布。定类/定序变量出<b>频数分布表</b>，量表变量出<b>描述统计表</b>（对应 SPSS：<span class="mono">分析 → 描述统计 → 频率 / 描述</span>）。</p>
+
+    <div class="controls">
+      <div class="field">
+        <label for="descVar">选择变量</label>
+        <select id="descVar"></select>
+      </div>
+      <div class="field">
+        <label>表格形式</label>
+        <div class="seg" id="descMode">
+          <button data-m="freq" class="on">频数分布</button>
+          <button data-m="stat">描述统计</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="descOut"></div>
+  </div>
+</section>
+
+<!-- ============ 交叉分析 ============ -->
+<section id="cross">
+  <div class="wrap">
+    <h2><span class="num">04</span>交叉分析：列联表 + 卡方检验</h2>
+    <p class="lead">这是招募里最看重的一块。任选行、列变量，工作台会生成完整交叉表（频数、行百分比、列百分比、合计），并实时计算 <b>Pearson 卡方、自由度、p 值、Cramér's V</b>，再自动写出一句结论——对应 SPSS：<span class="mono">分析 → 描述统计 → 交叉表</span>（勾选「卡方」「行」「列」）。</p>
+
+    <div class="controls">
+      <div class="field">
+        <label for="rowVar">行变量（自变量）</label>
+        <select id="rowVar"></select>
+      </div>
+      <div class="field">
+        <label for="colVar">列变量（因变量）</label>
+        <select id="colVar"></select>
+      </div>
+      <div class="field">
+        <label>单元格显示</label>
+        <div class="seg" id="cellMode">
+          <button data-m="rowpct" class="on">行%</button>
+          <button data-m="colpct">列%</button>
+          <button data-m="count">仅频数</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="crossOut"></div>
+  </div>
+</section>
+
+<!-- ============ 图表产出 ============ -->
+<section id="charts">
+  <div class="wrap">
+    <h2><span class="num">05</span>图表产出：五类论文级图形</h2>
+    <p class="lead">图形用矢量绘制，缩放不糊、配色统一，可直接放进论文正文或答辩 PPT。切换类型与变量实时重绘（对应 SPSS：<span class="mono">图形 → 图表构建器</span>）。</p>
+
+    <div class="controls">
+      <div class="field">
+        <label>图表类型</label>
+        <div class="seg" id="chartType">
+          <button data-t="bar" class="on">柱状图</button>
+          <button data-t="stack">堆积百分比</button>
+          <button data-t="donut">环形图</button>
+          <button data-t="radar">雷达图</button>
+          <button data-t="box">箱线图</button>
+        </div>
+      </div>
+      <div class="field" id="fVarA">
+        <label for="chartVarA">变量 A</label>
+        <select id="chartVarA"></select>
+      </div>
+      <div class="field" id="fVarB">
+        <label for="chartVarB">变量 B</label>
+        <select id="chartVarB"></select>
+      </div>
+    </div>
+
+    <div id="chartOut"></div>
+    <div class="chart-cap" id="chartCap"></div>
+  </div>
+</section>
+
+<!-- ============ 交付与承诺 ============ -->
+<section id="promise">
+  <div class="wrap">
+    <h2><span class="num">06</span>交付清单、进度与承诺</h2>
+    <p class="lead">能力之外，招募里最看重的是「不中途退出」。所以我把它写成可检查的东西：明确的交付物 + 分阶段的进度节点 + 承诺条款。</p>
+
+    <h3>我会交付的六件东西</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>交付物</th><th>格式</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">1</td><td class="dim">清洗后数据集</td><td class="mono">.sav / .xlsx</td><td>变量标签、值标签、维度得分齐全，可复用</td></tr>
+          <tr><td class="mono">2</td><td class="dim">SPSS 输出结果</td><td class="mono">.spv / .docx</td><td>频数、描述、交叉表、信度全部留痕，可复核</td></tr>
+          <tr><td class="mono">3</td><td class="dim">论文三线表</td><td class="mono">Word 表格</td><td>按论文变量名排版，直接填空</td></tr>
+          <tr><td class="mono">4</td><td class="dim">图表源文件</td><td class="mono">SVG / PNG 300dpi</td><td>矢量可再编辑，位图满足印刷要求</td></tr>
+          <tr><td class="mono">5</td><td class="dim">变量字典与分析说明</td><td class="mono">.md / .docx</td><td>一句话说明每个变量的处理方式，方便对接</td></tr>
+          <tr><td class="mono">6</td><td class="dim">分析结论初稿</td><td class="mono">.docx</td><td>把每个交叉分析结果写成论文可用的一句话结论</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>SPSS 操作映射（我做的每一步，对应哪个菜单）</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>分析环节</th><th>SPSS 菜单路径</th><th>本页对应模块</th></tr></thead>
+        <tbody>
+          <tr><td class="dim">反向计分 / 重编码</td><td class="mono">转换 → 重新编码为不同变量 / 计算变量</td><td>数据说明 · 清洗清单</td></tr>
+          <tr><td class="dim">信度检验</td><td class="mono">分析 → 度量 → 可靠性分析</td><td>02 信度检验</td></tr>
+          <tr><td class="dim">频数分布</td><td class="mono">分析 → 描述统计 → 频率</td><td>03 基础统计</td></tr>
+          <tr><td class="dim">描述统计</td><td class="mono">分析 → 描述统计 → 描述</td><td>03 基础统计</td></tr>
+          <tr><td class="dim">交叉分析 + 卡方</td><td class="mono">分析 → 描述统计 → 交叉表（勾选卡方/行/列）</td><td>04 交叉分析</td></tr>
+          <tr><td class="dim">图表制作</td><td class="mono">图形 → 图表构建器 / 旧对话框</td><td>05 图表产出</td></tr>
+          <tr><td class="dim">结果导出</td><td class="mono">导出 → Word/Excel；图表 → 导出</td><td>06 交付清单</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>进度节点</h3>
+    <ul class="timeline">
+      <li><span class="st">第 1 步</span><p class="tt">变量字典对齐</p><p class="dd">拿到你的问卷与原始数据，先产出变量字典和清洗方案，与你确认口径，1 轮内定稿。</p></li>
+      <li><span class="st">第 2 步</span><p class="tt">数据清洗与信度</p><p class="dd">完成缺失值、重编码、维度计分与 Cronbach's α，输出清洗后数据集与信度表。</p></li>
+      <li><span class="st">第 3 步</span><p class="tt">基础统计与交叉分析</p><p class="dd">产出频数、描述统计、全部相关交叉表与卡方结果，并写成论文用结论句。</p></li>
+      <li><span class="st">第 4 步</span><p class="tt">图表与交付</p><p class="dd">输出论文级图表源文件、三线表与完整 .spv 输出，配合你按老师意见做一轮修订。</p></li>
+    </ul>
+
+    <div class="pledge">
+      <h3>承诺</h3>
+      <p class="big">我承诺：<em>从加入当天到作品定稿，不中途退出。</em></p>
+      <p>分阶段交付可检查：每一步都留下可复核的文件（.sav / .spv / 图表源文件）。若某一步与你的时间冲突，我会提前说明并给出替代方案，而不是消失。数据、口径、进度全程对你透明。</p>
+      <p class="mono" style="font-size:.82rem;color:#9CB0A6">范嘉琪　·　联系方式见随附信息</p>
+    </div>
+  </div>
+</section>
+
+<div class="foot">
+  <span>通用问卷数据分析工作台 · 单文件离线版 · 作者 范嘉琪</span>
+  <span class="mono">方法口径对应 IBM SPSS Statistics 分析路径</span>
+</div>
+
+<script>
+/* =========================================================================
+   通用问卷数据分析工作台 —— 引擎
+   数据无关设计：示例数据可被真实问卷数据替换，统计逻辑不变
+   ========================================================================= */
+(function(){
+"use strict";
+
+/* ---------- 1. 基础工具 ---------- */
+function clamp(x,a,b){return x<a?a:(x>b?b:x);}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gauss(rng){var u=0,v=0;while(u===0)u=rng();while(v===0)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function pick(rng,w){var r=rng(),s=0;for(var i=0;i<w.length;i++){s+=w[i];if(r<s)return i;}return w.length-1;}
+function f2(x){return (Math.round(x*100)/100).toFixed(2);}
+function f3(x){return (Math.round(x*1000)/1000).toFixed(3);}
+function pFmt(p){ if(p<0.001) return "<0.001"; return f3(p); }
+function niceCeil(x){ if(x<=0) return 1; var e=Math.pow(10,Math.floor(Math.log10(x))); var m=x/e; var n=m<=1?1:(m<=2?2:(m<=2.5?2.5:(m<=5?5:10))); return n*e; }
+function quantile(sorted,q){ var pos=(sorted.length-1)*q; var b=Math.floor(pos); var r=pos-b; return sorted[b]+(r>0?(sorted[b+1]-sorted[b])*r:0); }
+
+/* 正则化不完全伽马函数（用于卡方 p 值） */
+function gammln(xx){
+  var cof=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+  var x=xx,y=xx,tmp=x+5.5; tmp-=(x+0.5)*Math.log(tmp);
+  var ser=1.000000000190015;
+  for(var j=0;j<6;j++){ y+=1; ser+=cof[j]/y; }
+  return -tmp+Math.log(2.5066282746310005*ser/x);
+}
+function gser(a,x){ var ap=a,sum=1/a,del=sum; for(var n=1;n<200;n++){ ap+=1; del*=x/ap; sum+=del; if(Math.abs(del)<Math.abs(sum)*1e-14) break; } return sum*Math.exp(-x+a*Math.log(x)-gammln(a)); }
+function gcf(a,x){ var FPMIN=1e-300,b=x+1-a,c=1/FPMIN,d=1/b,h=d; for(var i=1;i<200;i++){ var an=-i*(i-a); b+=2; d=an*d+b; if(Math.abs(d)<FPMIN)d=FPMIN; c=b+an/c; if(Math.abs(c)<FPMIN)c=FPMIN; d=1/d; var del=d*c; h*=del; if(Math.abs(del-1)<1e-14) break; } return Math.exp(-x+a*Math.log(x)-gammln(a))*h; }
+function gammq(a,x){ if(x<0||a<=0) return NaN; if(x<a+1) return 1-gser(a,x); return gcf(a,x); }
+function chi2p(chi2,df){ if(df<=0) return NaN; return clamp(gammq(df/2,chi2/2),0,1); }
+
+/* ---------- 2. 生成示例问卷数据（可替换为真实数据） ---------- */
+var N=240, SEED=20261016;
+var rng=mulberry32(SEED);
+
+var CAT_GENDER=["男","女"];
+var CAT_AGE=["18–25岁","26–35岁","36–45岁","46–55岁","56岁及以上"];
+var CAT_EDU=["初中及以下","高中/中专","大专","本科","硕士及以上"];
+var CAT_AREA=["城镇","农村"];
+var CAT_INCOME=["3000元及以下","3001–6000元","6001–10000元","10000元以上"];
+var CAT_FREQ=["从不","偶尔","有时","经常","总是"];
+var CAT_LEVEL=["低","中","高"];
+var CHANNELS=["社交媒体","电视/广播","亲友推荐","政府/官方宣传","线下活动","报刊/书籍"];
+
+var DIMS=[
+  {key:"cog",label:"认知度",items:[
+    {k:"C1",label:"我了解该领域的基本情况"},
+    {k:"C2",label:"我能分辨相关信息是否可信"},
+    {k:"C3",label:"我关注该议题的最新动态"}]},
+  {key:"att",label:"认同度",items:[
+    {k:"A1",label:"我认为该议题与每个人息息相关"},
+    {k:"A2",label:"我认为推动该议题具有社会价值"},
+    {k:"A3",label:"我认为社会各界应给予更多重视"}]},
+  {key:"wil",label:"参与意愿",items:[
+    {k:"I1",label:"我愿意在日常生活中采取相应行动"},
+    {k:"I2",label:"我愿意为此投入时间或一定费用"},
+    {k:"I3",label:"我愿意向身边的人推荐相关做法"}]},
+  {key:"sat",label:"满意度",items:[
+    {k:"S1",label:"我对目前相关服务的总体状况感到满意"},
+    {k:"S2",label:"我认为现有相关措施基本能满足需求"}]}
+];
+
+function levelOf(x){ return x<2.5?"低":(x>3.5?"高":"中"); }
+
+var rows=[];
+for(var i=0;i<N;i++){
+  var gender=CAT_GENDER[rng()<0.51?0:1];
+  var ageI=pick(rng,[0.30,0.28,0.20,0.14,0.08]);
+  var eduI=pick(rng,[0.05,0.16,0.22,0.43,0.14]);
+  var areaI=rng()<0.62?0:1;
+  var incI=pick(rng,[0.22,0.40,0.26,0.12]);
+
+  var zEdu=(eduI-2)/1.15;
+  var zArea=(areaI===0)?0.30:-0.30;
+  var cog=clamp(3.05+0.55*zEdu+zArea+0.60*gauss(rng),1,5);
+  var att=clamp(1.40+0.62*cog+0.45*gauss(rng),1,5);
+  var wil=clamp(1.15+0.55*att+0.16*incI+0.45*gauss(rng),1,5);
+  var sat=clamp(1.25+0.58*wil+0.45*gauss(rng),1,5);
+
+  var r={
+    gender:gender, age:ageI, edu:eduI, area:areaI, income:incI,
+    items:{}
+  };
+  var lat={cog:cog,att:att,wil:wil,sat:sat};
+  DIMS.forEach(function(d){
+    d.items.forEach(function(it){
+      r.items[it.k]=clamp(Math.round(lat[d.key]+0.5*gauss(rng)),1,5);
+    });
+    var sum=0; d.items.forEach(function(it){ sum+=r.items[it.k]; });
+    r[d.key+"Score"]=sum/d.items.length;
+  });
+  // 参与频率
+  var rf=wil+0.5*gauss(rng);
+  r.freq = rf<1.85?0:(rf<2.55?1:(rf<3.25?2:(rf<3.95?3:4)));
+
+  // 多选题：信息渠道
+  var base=[0.62,0.34,0.41,0.30,0.25,0.18];
+  if(areaI===1){ base[0]-=0.10; base[1]+=0.14; base[2]+=0.08; base[3]-=0.04; }
+  if(ageI>=3){ base[0]-=0.12; base[5]+=0.10; base[1]+=0.10; }
+  r.channel=[];
+  CHANNELS.forEach(function(c,ci){ if(rng()<clamp(base[ci],0,1)) r.channel.push(ci); });
+  if(r.channel.length===0) r.channel.push(pick(rng,[0.6,0.1,0.15,0.1,0.05,0]));
+
+  r.cogLevel=levelOf(cog); r.attLevel=levelOf(att); r.wilLevel=levelOf(wil); r.satLevel=levelOf(sat);
+  rows.push(r);
+}
+
+/* ---------- 3. 变量注册表 ---------- */
+var VARS={
+  gender:{label:"性别",type:"nominal",cats:CAT_GENDER,get:function(r){return CAT_GENDER[r.gender];}},
+  age:{label:"年龄段",type:"ordinal",cats:CAT_AGE,get:function(r){return CAT_AGE[r.age];}},
+  edu:{label:"受教育程度",type:"ordinal",cats:CAT_EDU,get:function(r){return CAT_EDU[r.edu];}},
+  area:{label:"常住地类型",type:"nominal",cats:CAT_AREA,get:function(r){return CAT_AREA[r.area];}},
+  income:{label:"个人月收入",type:"ordinal",cats:CAT_INCOME,get:function(r){return CAT_INCOME[r.income];}},
+  freq:{label:"参与频率",type:"ordinal",cats:CAT_FREQ,get:function(r){return CAT_FREQ[r.freq];}},
+  cogLevel:{label:"认知水平（分组）",type:"ordinal",cats:CAT_LEVEL,get:function(r){return r.cogLevel;}},
+  attLevel:{label:"认同水平（分组）",type:"ordinal",cats:CAT_LEVEL,get:function(r){return r.attLevel;}},
+  wilLevel:{label:"参与意愿（分组）",type:"ordinal",cats:CAT_LEVEL,get:function(r){return r.wilLevel;}},
+  satLevel:{label:"满意度（分组）",type:"ordinal",cats:CAT_LEVEL,get:function(r){return r.satLevel;}}
+};
+var SCALE_VARS={};
+DIMS.forEach(function(d){
+  SCALE_VARS[d.key]={label:d.label+"（维度均分）",dim:d,get:function(r){return r[d.key+"Score"];}};
+  d.items.forEach(function(it){
+    SCALE_VARS[it.k]={label:it.label.slice(0,10)+"…（"+it.k+"）",dim:d,item:it.k,get:function(r){return r.items[it.k];}};
+  });
+});
+var MULTI_VAR={key:"channel",label:"信息渠道（多选）",cats:CHANNELS};
+
+/* ---------- 4. 统计函数 ---------- */
+function freqTable(key){
+  var v=VARS[key], counts={}, total=0;
+  v.cats.forEach(function(c){counts[c]=0;});
+  rows.forEach(function(r){ var c=v.get(r); if(c in counts){counts[c]++; total++;} });
+  var out=[],cum=0;
+  v.cats.forEach(function(c){
+    var n=counts[c], pct=total?n/total*100:0; cum+=pct;
+    out.push({cat:c,n:n,pct:pct,valid:total?n/total*100:0,cum:cum});
+  });
+  return {rows:out,total:total};
+}
+function multiFreq(){
+  var counts=MULTI_VAR.cats.map(function(){return 0;}), resp=0;
+  rows.forEach(function(r){ r.channel.forEach(function(ci){counts[ci]++; resp++;}); });
+  var out=MULTI_VAR.cats.map(function(c,i){
+    return {cat:c,n:counts[i],pctResp:resp?counts[i]/resp*100:0,pctCase:rows.length?counts[i]/rows.length*100:0};
+  });
+  out.sort(function(a,b){return b.n-a.n;});
+  return {rows:out,totalResp:resp,totalCase:rows.length};
+}
+function descriptives(key){
+  var sv=SCALE_VARS[key];
+  var arr=rows.map(function(r){return sv.get(r);}).filter(function(x){return x==null||isNaN(x)?false:true;});
+  var n=arr.length, mean=0; arr.forEach(function(x){mean+=x;}); mean/=n;
+  var sorted=arr.slice().sort(function(a,b){return a-b;});
+  var median=quantile(sorted,0.5);
+  var m2=0,m3=0,m4=0; arr.forEach(function(x){var d=x-mean; m2+=d*d; m3+=d*d*d; m4+=d*d*d*d;});
+  var variance=(n>1)?m2/(n-1):0, sd=Math.sqrt(variance);
+  var skew=(n>2&&sd>0)?(m3/n)/(sd*sd*sd):0;
+  var kurt=(n>3&&sd>0)?((m4/n)/(sd*sd*sd*sd)-3):0;
+  // 众数
+  var freq={},modeV=mean,modeN=-1;
+  arr.forEach(function(x){var k=Math.round(x);freq[k]=(freq[k]||0)+1;});
+  Object.keys(freq).forEach(function(k){ if(freq[k]>modeN){modeN=freq[k];modeV=+k;} });
+  var dist=[1,2,3,4,5].map(function(v){ return {v:v,n:arr.filter(function(x){return Math.round(x)===v;}).length}; });
+  return {n:n,mean:mean,median:median,mode:modeV,sd:sd,variance:variance,min:sorted[0],max:sorted[sorted.length-1],skew:skew,kurt:kurt,dist:dist};
+}
+function cronbach(dim){
+  var items=dim.items.map(function(it){return it.k;});
+  var k=items.length;
+  var data=rows.map(function(r){return items.map(function(it){return r.items[it];});});
+  // 各题方差（样本方差）
+  var itemVar=items.map(function(_,ci){
+    var a=data.map(function(d){return d[ci];}); var m=0; a.forEach(function(x){m+=x;}); m/=a.length;
+    var s=0; a.forEach(function(x){s+=(x-m)*(x-m);}); return s/(a.length-1);
+  });
+  var tot=data.map(function(d){var s=0;d.forEach(function(x){s+=x;});return s;});
+  var tm=0; tot.forEach(function(x){tm+=x;}); tm/=tot.length;
+  var ts=0; tot.forEach(function(x){ts+=(x-tm)*(x-tm);}); var totVar=ts/(tot.length-1);
+  var sumIV=0; itemVar.forEach(function(v){sumIV+=v;});
+  var alpha=(k/(k-1))*(1-sumIV/totVar);
+  return {k:k,alpha:alpha,meanInter:0};
+}
+function crosstab(rk,ck){
+  var rv=VARS[rk], cv=VARS[ck];
+  var table={}, rowT={}, colT={}, grand=0;
+  rv.cats.forEach(function(rc){ table[rc]={}; rowT[rc]=0; cv.cats.forEach(function(cc){table[rc][cc]=0; colT[cc]=colT[cc]||0;}); });
+  rows.forEach(function(r){
+    var rc=rv.get(r), cc=cv.get(r);
+    if(rc in table && cc!=null){ table[rc][cc]++; rowT[rc]++; colT[cc]++; grand++; }
+  });
+  // 卡方
+  var chi2=0, cells=[], minExp=Infinity;
+  var r=rv.cats.length, c=cv.cats.length;
+  rv.cats.forEach(function(rc){ cv.cats.forEach(function(cc){
+    var O=table[rc][cc], E=grand?rowT[rc]*colT[cc]/grand:0;
+    if(E>0){ chi2+=(O-E)*(O-E)/E; cells.push({rc:rc,cc:cc,O:O,E:E}); if(E<minExp)minExp=E; }
+  });});
+  var df=(r-1)*(c-1);
+  var p=chi2p(chi2,df);
+  var V=grand>0?Math.sqrt(chi2/(grand*Math.min(r-1,c-1))):0;
+  // 期望频数<5 的单元格比例
+  var lowExp=cells.filter(function(x){return x.E<5;}).length;
+  return {table:table,rowT:rowT,colT:colT,grand:grand,chi2:chi2,df:df,p:p,V:V,minExp:minExp,lowExp:lowExp,nCells:cells.length,rv:rv,cv:cv};
+}
+
+/* ---------- 5. 颜色与 SVG ---------- */
+var PALETTE=["#0F6B57","#3E8E77","#7FB7A3","#B4571F","#D98C5A","#2E4B7A","#5C7CB0","#8A8F86","#B9BCB2"];
+function colorFor(i){ return PALETTE[i%PALETTE.length]; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function svgWrap(W,H,inner){ return '<svg viewBox="0 0 '+W+' '+H+'" role="img">'+inner+'</svg>'; }
+
+function chartBar(data,opt){
+  opt=opt||{}; var W=760,H=Math.max(300,360),m={t:26,r:22,b:64,l:56};
+  var iw=W-m.l-m.r, ih=H-m.t-m.b;
+  var max=1; data.forEach(function(d){ if(d.value>max)max=d.value; });
+  var yMax=niceCeil(max*1.08);
+  var n=data.length, slot=iw/n, bw=Math.min(88,slot*0.58);
+  var s="";
+  // y 轴网格与刻度
+  for(var t=0;t<=5;t++){
+    var v=yMax*t/5, y=m.t+ih-ih*(t/5);
+    s+='<line class="grid" x1="'+m.l+'" y1="'+y+'" x2="'+(m.l+iw)+'" y2="'+y+'"/>';
+    s+='<text class="ax" x="'+(m.l-8)+'" y="'+(y+4)+'" text-anchor="end">'+ (yMax<=5? v.toFixed(1).replace(/\.0$/,"") : Math.round(v)) +'</text>';
+  }
+  s+='<line class="axis" x1="'+m.l+'" y1="'+(m.t+ih)+'" x2="'+(m.l+iw)+'" y2="'+(m.t+ih)+'"/>';
+  data.forEach(function(d,i){
+    var x=m.l+slot*i+(slot-bw)/2, h=ih*(d.value/yMax), y=m.t+ih-h;
+    s+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+Math.max(0,h)+'" rx="3" fill="'+colorFor(i)+'"/>';
+    s+='<text class="vl" x="'+(x+bw/2)+'" y="'+(y-6)+'" text-anchor="middle">'+(opt.pct? f2(d.value)+"%" : d.value)+'</text>';
+    var lx=x+bw/2, ly=m.t+ih+20;
+    s+='<text class="ax" x="'+lx+'" y="'+ly+'" text-anchor="middle">'+esc(d.label.length>8?d.label.slice(0,7)+"…":d.label)+'</text>';
+    if(d.label.length>8) s+='<title>'+esc(d.label)+'</title>';
+  });
+  return svgWrap(W,H,s);
+}
+
+function chartStacked(ct){
+  var rv=ct.rv,cv=ct.cv, r=rv.cats.length, c=cv.cats.length;
+  var W=760,H=Math.max(300,120+ r*54 + 40);
+  var m={t:20,r:150,b:44,l:Math.min(190,120)};
+  var iw=W-m.l-m.r, ih=H-m.t-m.b, slot=ih/r, bh=Math.min(46,slot*0.62);
+  var s="";
+  // 图例
+  cv.cats.forEach(function(cc,i){
+    var lx=W-m.r+8, ly=m.t+i*22;
+    s+='<rect x="'+lx+'" y="'+ly+'" width="12" height="12" rx="3" fill="'+colorFor(i)+'"/>';
+    s+='<text class="ax" x="'+(lx+17)+'" y="'+(ly+10)+'">'+esc(cc.length>9?cc.slice(0,8)+"…":cc)+'</text>';
+  });
+  rv.cats.forEach(function(rc,ri){
+    var y=m.t+slot*ri+(slot-bh)/2, x=m.l;
+    var tot=ct.rowT[rc];
+    s+='<text class="ax" x="'+(m.l-8)+'" y="'+(y+bh/2+4)+'" text-anchor="end">'+esc(rc)+'</text>';
+    cv.cats.forEach(function(cc,ci){
+      var v=tot?ct.table[rc][cc]/tot*100:0, w=iw*v/100;
+      s+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+bh+'" fill="'+colorFor(ci)+'"/>';
+      if(v>=9) s+='<text x="'+(x+w/2)+'" y="'+(y+bh/2+4)+'" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="var(--font-mono)">'+f2(v)+'%</text>';
+      x+=w;
+    });
+    s+='<text class="ax" x="'+(m.l+iw+10)+'" y="'+(y+bh/2+4)+'">n='+tot+'</text>';
+  });
+  // 0-100 刻度
+  for(var t=0;t<=5;t++){
+    var gx=m.l+iw*t/5;
+    s+='<line class="grid" x1="'+gx+'" y1="'+m.t+'" x2="'+gx+'" y2="'+(m.t+ih)+'"/>';
+  }
+  s+='<text class="ax" x="'+m.l+'" y="'+(m.t+ih+24)+'">0%</text>';
+  s+='<text class="ax" x="'+(m.l+iw)+'" y="'+(m.t+ih+24)+'" text-anchor="end">100%</text>';
+  return svgWrap(W,H,s);
+}
+
+function chartDonut(data,title){
+  var W=760,H=360,cx=300,cy=180,R=118,ri=74;
+  var total=0; data.forEach(function(d){total+=d.value;});
+  var s="", a0=-Math.PI/2;
+  data.forEach(function(d,i){
+    var frac=total?d.value/total:0, a1=a0+frac*Math.PI*2;
+    var large=(a1-a0)>Math.PI?1:0;
+    var x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0);
+    var x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
+    var xi1=cx+ri*Math.cos(a1), yi1=cy+ri*Math.sin(a1);
+    var xi0=cx+ri*Math.cos(a0), yi0=cy+ri*Math.sin(a0);
+    var path='M '+x0+' '+y0+' A '+R+' '+R+' 0 '+large+' 1 '+x1+' '+y1+' L '+xi1+' '+yi1+' A '+ri+' '+ri+' 0 '+large+' 0 '+xi0+' '+yi0+' Z';
+    s+='<path d="'+path+'" fill="'+colorFor(i)+'"/>';
+    // 标签
+    var mid=(a0+a1)/2, lx=cx+(R+18)*Math.cos(mid), ly=cy+(R+18)*Math.sin(mid);
+    if(frac>0.05){
+      var anchor=Math.cos(mid)>0.2?"start":(Math.cos(mid)<-0.2?"end":"middle");
+      s+='<text class="vl" x="'+lx+'" y="'+(ly+4)+'" text-anchor="'+anchor+'">'+f2(frac*100)+'%</text>';
+    }
+    a0=a1;
+  });
+  s+='<text x="'+cx+'" y="'+(cy-4)+'" text-anchor="middle" font-size="26" font-weight="700" fill="#151A17" font-family="var(--font-mono)">'+total+'</text>';
+  s+='<text x="'+cx+'" y="'+(cy+18)+'" text-anchor="middle" font-size="11" fill="#5C655E">N</text>';
+  // 图例
+  data.forEach(function(d,i){
+    var ly=68+i*26, lx=560;
+    s+='<rect x="'+lx+'" y="'+(ly-10)+'" width="12" height="12" rx="3" fill="'+colorFor(i)+'"/>';
+    s+='<text class="ax" x="'+(lx+18)+'" y="'+ly+'">'+esc(d.label.length>8?d.label.slice(0,7)+"…":d.label)+'　n='+d.value+'</text>';
+  });
+  return svgWrap(W,H,s);
+}
+
+function chartRadar(){
+  var W=760,H=400, cx=330, cy=205, R=132;
+  var labels=DIMS.map(function(d){return d.label;});
+  var vals=DIMS.map(function(d){ var m=0; rows.forEach(function(r){m+=r[d.key+"Score"];}); return m/rows.length; });
+  var k=labels.length, s="";
+  // 网格环
+  for(var ring=1;ring<=5;ring++){
+    var rr=R*ring/5, pts=[];
+    for(var i=0;i<k;i++){ var a=-Math.PI/2+i*2*Math.PI/k; pts.push((cx+rr*Math.cos(a)).toFixed(1)+","+(cy+rr*Math.sin(a)).toFixed(1)); }
+    s+='<polygon points="'+pts.join(" ")+'" fill="none" stroke="'+(ring===5?"#C9C8C0":"#E4E3DA")+'" stroke-width="1"/>';
+  }
+  // 轴线与标签
+  for(var i=0;i<k;i++){
+    var a=-Math.PI/2+i*2*Math.PI/k;
+    var ex=cx+R*Math.cos(a), ey=cy+R*Math.sin(a);
+    s+='<line class="grid" x1="'+cx+'" y1="'+cy+'" x2="'+ex.toFixed(1)+'" y2="'+ey.toFixed(1)+'"/>';
+    var lx=cx+(R+26)*Math.cos(a), ly=cy+(R+26)*Math.sin(a);
+    var anchor=Math.abs(Math.cos(a))<0.2?"middle":(Math.cos(a)>0?"start":"end");
+    s+='<text class="ax" x="'+lx.toFixed(1)+'" y="'+(ly+4).toFixed(1)+'" text-anchor="'+anchor+'" style="font-weight:700;fill:#151A17">'+labels[i]+'</text>';
+    s+='<text class="vl" x="'+lx.toFixed(1)+'" y="'+(ly+20).toFixed(1)+'" text-anchor="'+anchor+'">'+f2(vals[i])+'</text>';
+  }
+  // 数据多边形
+  var dpts=[];
+  for(var i=0;i<k;i++){ var a=-Math.PI/2+i*2*Math.PI/k; var rr=R*clamp(vals[i],0,5)/5; dpts.push((cx+rr*Math.cos(a)).toFixed(1)+","+(cy+rr*Math.sin(a)).toFixed(1)); }
+  s+='<polygon points="'+dpts.join(" ")+'" fill="rgba(15,107,87,.18)" stroke="#0F6B57" stroke-width="2"/>';
+  dpts.forEach(function(p){ var xy=p.split(","); s+='<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="3.5" fill="#0F6B57"/>'; });
+  // 中心参考说明
+  s+='<text class="ax" x="'+cx+'" y="'+(cy+R+52)+'" text-anchor="middle">外圈=5 分（满分），内圈 1 分；数值为各维度均值</text>';
+  return svgWrap(W,H,s);
+}
+
+function chartBox(groups,seriesLabel){
+  var W=760,H=400,m={t:26,r:24,b:62,l:56};
+  var iw=W-m.l-m.r, ih=H-m.t-m.b;
+  var yMin=1, yMax=5;
+  var slot=iw/groups.length, bw=Math.min(96,slot*0.5);
+  var s="";
+  for(var t=0;t<=4;t++){
+    var v=yMin+t, y=m.t+ih-ih*t/4;
+    s+='<line class="grid" x1="'+m.l+'" y1="'+y+'" x2="'+(m.l+iw)+'" y2="'+y+'"/>';
+    s+='<text class="ax" x="'+(m.l-8)+'" y="'+(y+4)+'" text-anchor="end">'+v+'</text>';
+  }
+  var Y=function(v){ return m.t+ih-ih*(v-yMin)/(yMax-yMin); };
+  groups.forEach(function(g,gi){
+    var vals=g.values.slice().sort(function(a,b){return a-b;});
+    var q1=quantile(vals,0.25), q2=quantile(vals,0.5), q3=quantile(vals,0.75);
+    var iqr=q3-q1, lo=vals[0], hi=vals[vals.length-1];
+    var lowFence=q1-1.5*iqr, hiFence=q3+1.5*iqr;
+    var wLo=vals.filter(function(v){return v>=lowFence;})[0];
+    var wHi=vals.slice().reverse().filter(function(v){return v<=hiFence;})[0];
+    var x=m.l+slot*gi+slot/2, half=bw/2;
+    s+='<line class="axis" x1="'+x+'" y1="'+Y(wLo)+'" x2="'+x+'" y2="'+Y(wHi)+'"/>';
+    s+='<line class="axis" x1="'+(x-half*0.5)+'" y1="'+Y(wHi)+'" x2="'+(x+half*0.5)+'" y2="'+Y(wHi)+'"/>';
+    s+='<line class="axis" x1="'+(x-half*0.5)+'" y1="'+Y(wLo)+'" x2="'+(x+half*0.5)+'" y2="'+Y(wLo)+'"/>';
+    s+='<rect x="'+(x-half)+'" y="'+Y(q3)+'" width="'+bw+'" height="'+Math.max(1,Y(q1)-Y(q3))+'" fill="'+colorFor(gi)+'" fill-opacity="0.35" stroke="'+colorFor(gi)+'"/>';
+    s+='<line x1="'+(x-half)+'" y1="'+Y(q2)+'" x2="'+(x+half)+'" y2="'+Y(q2)+'" stroke="'+colorFor(gi)+'" stroke-width="2.5"/>';
+    // 异常值
+    vals.forEach(function(v){ if(v<lowFence||v>hiFence) s+='<circle cx="'+x+'" cy="'+Y(v)+'" r="2.5" fill="#B4571F"/>'; });
+    s+='<text class="vl" x="'+x+'" y="'+(m.t+ih+22)+'" text-anchor="middle">'+esc(g.label)+'</text>';
+    s+='<text class="ax" x="'+x+'" y="'+(m.t+ih+40)+'" text-anchor="middle">中位数 '+f2(q2)+'</text>';
+  });
+  return svgWrap(W,H,s);
+}
+
+/* ---------- 6. 渲染：频数 / 描述 ---------- */
+var descState={mode:"freq"};
+function renderDesc(){
+  var key=document.getElementById("descVar").value;
+  var out=document.getElementById("descOut");
+  if(key==="__channel__"){ out.innerHTML=renderMultiFreq(); return; }
+  if(VARS[key]){
+    if(descState.mode==="stat"){
+      // 定类变量也给出基本统计
+      var f=freqTable(key);
+      var s='<div class="panel"><h3>'+VARS[key].label+' · 描述统计</h3><div class="table-wrap"><table><caption>表　'+VARS[key].label+' 基本统计量</caption><thead><tr><th>统计量</th><th class="num-cell">数值</th></tr></thead><tbody>'
+        +'<tr><td>有效样本 N</td><td class="num-cell">'+f.total+'</td></tr>'
+        +'<tr><td>类别数</td><td class="num-cell">'+VARS[key].cats.length+'</td></tr>'
+        +'<tr><td>最大频数类别</td><td class="num-cell">'+maxCat(f)+'</td></tr>'
+        +'</tbody></table></div>'
+        +'<div class="note">该变量为'+ (VARS[key].type==="nominal"?"定类":"定序") +'测量层次，中心与离散趋势以频数与百分比刻画（SPSS 中「描述」命令不适用于此类变量，用「频率」更合适）。</div></div>';
+      out.innerHTML=s; return;
+    }
+    out.innerHTML=renderFreq(key); return;
+  }
+  // 量表变量
+  out.innerHTML=renderScale(key);
+}
+function maxCat(f){ var best=f.rows[0]; f.rows.forEach(function(r){ if(r.n>best.n) best=r; }); return esc(best.cat)+"（n="+best.n+"）"; }
+function renderFreq(key){
+  var f=freqTable(key), v=VARS[key];
+  var body="";
+  f.rows.forEach(function(r){
+    body+='<tr><td>'+esc(r.cat)+'</td><td class="num-cell">'+r.n+'</td><td class="num-cell">'+f2(r.pct)+'</td><td class="num-cell">'+f2(r.valid)+'</td><td class="num-cell">'+f2(r.cum)+'</td></tr>';
+  });
+  body+='<tr class="total"><td>合计</td><td class="num-cell">'+f.total+'</td><td class="num-cell">100.00</td><td class="num-cell">100.00</td><td class="num-cell">—</td></tr>';
+  var data=f.rows.map(function(r){return {label:r.cat,value:r.n};});
+  return '<div class="panel"><h3>'+v.label+' · 频数分布</h3>'
+    +'<div class="table-wrap"><table><caption>表　'+v.label+' 频数分布（对应 SPSS：分析 → 描述统计 → 频率）</caption>'
+    +'<thead><tr><th>类别</th><th class="num-cell">频数</th><th class="num-cell">百分比 %</th><th class="num-cell">有效百分比 %</th><th class="num-cell">累计百分比 %</th></tr></thead><tbody>'
+    +body+'</tbody></table></div>'
+    +'<div class="chart">'+chartBar(data)+'</div>'
+    +'<div class="chart-cap">图　'+esc(v.label)+' 频数分布（柱状图）</div></div>';
+}
+function renderScale(key){
+  var d=descriptives(key);
+  var name=SCALE_VARS[key].label;
+  var body=''
+    +'<tr><td>有效样本 N</td><td class="num-cell">'+d.n+'</td></tr>'
+    +'<tr><td>均值 Mean</td><td class="num-cell">'+f3(d.mean)+'</td></tr>'
+    +'<tr><td>中位数 Median</td><td class="num-cell">'+f3(d.median)+'</td></tr>'
+    +'<tr><td>众数 Mode</td><td class="num-cell">'+d.mode+'</td></tr>'
+    +'<tr><td>标准差 SD</td><td class="num-cell">'+f3(d.sd)+'</td></tr>'
+    +'<tr><td>方差 Variance</td><td class="num-cell">'+f3(d.variance)+'</td></tr>'
+    +'<tr><td>最小值 / 最大值</td><td class="num-cell">'+f2(d.min)+' / '+f2(d.max)+'</td></tr>'
+    +'<tr><td>偏度 Skewness</td><td class="num-cell">'+f3(d.skew)+'</td></tr>'
+    +'<tr><td>峰度 Kurtosis</td><td class="num-cell">'+f3(d.kurt)+'</td></tr>';
+  var data=d.dist.map(function(x){return {label:x.v+"分",value:x.n};});
+  return '<div class="panel"><h3>'+name+' · 描述统计</h3>'
+    +'<div class="table-wrap"><table><caption>表　'+name+' 描述统计量（对应 SPSS：分析 → 描述统计 → 描述）</caption>'
+    +'<thead><tr><th>统计量</th><th class="num-cell">数值</th></tr></thead><tbody>'+body+'</tbody></table></div>'
+    +'<div class="chart">'+chartBar(data,{pct:false})+'</div>'
+    +'<div class="chart-cap">图　'+esc(name)+' 各取值频数分布</div>'
+    +'<div class="note">偏度绝对值 &lt; 1、峰度绝对值 &lt; 3 时，可近似认为接近正态分布，满足多数参数检验的前提。</div></div>';
+}
+function renderMultiFreq(){
+  var f=multiFreq();
+  var body=f.rows.map(function(r){
+    return '<tr><td>'+esc(r.cat)+'</td><td class="num-cell">'+r.n+'</td><td class="num-cell">'+f2(r.pctResp)+'</td><td class="num-cell">'+f2(r.pctCase)+'</td></tr>';
+  }).join("");
+  var data=f.rows.map(function(r){return {label:r.cat,value:r.n};});
+  return '<div class="panel"><h3>信息渠道（多选题）· 多重响应频率</h3>'
+    +'<div class="table-wrap"><table><caption>表　多选题频率（对应 SPSS：分析 → 多重响应 → 频率）</caption>'
+    +'<thead><tr><th>选项</th><th class="num-cell">响应数</th><th class="num-cell">响应百分比 %</th><th class="num-cell">个案百分比 %</th></tr></thead><tbody>'
+    +body+'</tbody></table></div>'
+    +'<div class="chart">'+chartBar(data)+'</div>'
+    +'<div class="chart-cap">图　各信息渠道被选择频数（共 '+f.totalResp+' 次响应，'+f.totalCase+' 个有效个案）</div></div>';
+}
+
+/* ---------- 7. 渲染：交叉分析 ---------- */
+var cellMode="rowpct";
+function renderCross(){
+  var rk=document.getElementById("rowVar").value;
+  var ck=document.getElementById("colVar").value;
+  var out=document.getElementById("crossOut");
+  if(rk===ck){
+    out.innerHTML='<div class="note warn">行变量与列变量相同，无法做交叉分析。请在右侧把「列变量」换成另一个变量。</div>';
+    return;
+  }
+  var ct=crosstab(rk,ck);
+  var head='<tr><th>'+esc(ct.rv.label)+' ＼ '+esc(ct.cv.label)+'</th>'
+    + ct.cv.cats.map(function(c){return '<th class="num-cell">'+esc(c)+'</th>';}).join("")
+    + '<th class="num-cell">合计</th></tr>';
+  var bodyT="";
+  ct.rv.cats.forEach(function(rc){
+    bodyT+='<tr><td class="dim">'+esc(rc)+'</td>';
+    ct.cv.cats.forEach(function(cc){
+      var O=ct.table[rc][cc], rt=ct.rowT[rc], ctv=ct.colT[cc];
+      var txt="";
+      if(cellMode==="count") txt='<span class="mono">'+O+'</span>';
+      else if(cellMode==="rowpct") txt='<span class="mono">'+O+'</span><br><span style="color:var(--muted);font-size:.8em">'+(rt?f2(O/rt*100):"0.00")+'%</span>';
+      else txt='<span class="mono">'+O+'</span><br><span style="color:var(--muted);font-size:.8em">'+(ctv?f2(O/ctv*100):"0.00")+'%</span>';
+      bodyT+='<td class="num-cell">'+txt+'</td>';
+    });
+    bodyT+='<td class="num-cell" style="font-weight:700">'+ct.rowT[rc]+'</td></tr>';
+  });
+  bodyT+='<tr class="total"><td>合计</td>'+ct.cv.cats.map(function(cc){return '<td class="num-cell">'+ct.colT[cc]+'</td>';}).join("")+'<td class="num-cell">'+ct.grand+'</td></tr>';
+
+  var sig=ct.p<0.05;
+  var sigLevel=ct.p<0.01?0.01:(ct.p<0.05?0.05:1);
+  var Vdesc=ct.V<0.1?"极弱":(ct.V<0.3?"弱":(ct.V<0.5?"中等":"较强"));
+  var concl = sig
+    ? '<b>结论：</b>「'+ct.rv.label+'」与「'+ct.cv.label+'」在 '+ (sigLevel===0.01?"1%":"5%") +' 显著性水平下显著相关（p='+pFmt(ct.p)+' &lt; '+sigLevel+'）。'
+    : '<b>结论：</b>「'+ct.rv.label+'」与「'+ct.cv.label+'」未达到显著相关（p='+pFmt(ct.p)+' ≥ 0.05），两组变量的分布差异不具统计学意义。';
+  // 最强单元格
+  var bestO=-1,bestRC="",bestCC="";
+  ct.rv.cats.forEach(function(rc){ ct.cv.cats.forEach(function(cc){ if(ct.table[rc][cc]>bestO){bestO=ct.table[rc][cc];bestRC=rc;bestCC=cc;} }); });
+  var detail='其中，「'+esc(bestRC)+'」样本中落在「'+esc(bestCC)+'」的人数最多（n='+bestO+'，占该行 '+(ct.rowT[bestRC]?f2(bestO/ct.rowT[bestRC]*100):0)+'%）。';
+
+  var warnExp = ct.lowExp>0 ? '<div class="note warn"><b>适用性提示：</b>有 '+ct.lowExp+' / '+ct.nCells+' 个单元格的期望频数小于 5（最小 '+f2(ct.minExp)+'）。当期望频数 &lt; 5 的单元格超过 20% 时，建议改用 Fisher 精确检验或合并类别后再下结论。</div>' : '';
+
+  out.innerHTML=''
+    +'<div class="panel"><h3>交叉表</h3>'
+    +'<div class="table-wrap"><table><caption>表　'+esc(ct.rv.label)+' × '+esc(ct.cv.label)+' 交叉表（'+ (cellMode==="rowpct"?"单元格 = 频数 / 行百分比":cellMode==="colpct"?"单元格 = 频数 / 列百分比":"单元格 = 频数") +'）</caption>'
+    +'<thead>'+head+'</thead><tbody>'+bodyT+'</tbody></table></div></div>'
+    +'<div class="chi">'
+      +'<div class="b"><div class="k">Pearson 卡方 χ²</div><div class="v">'+f3(ct.chi2)+'</div></div>'
+      +'<div class="b"><div class="k">自由度 df</div><div class="v">'+ct.df+'</div></div>'
+      +'<div class="b'+(sig?' hit':'')+'"><div class="k">显著性 p 值</div><div class="v">'+pFmt(ct.p)+'</div></div>'
+      +'<div class="b"><div class="k">Cramér\'s V</div><div class="v">'+f3(ct.V)+'</div></div>'
+    +'</div>'
+    +'<div class="concl">'+concl+'<br>关联强度 Cramér\'s V = '+f3(ct.V)+'（'+Vdesc+'关联）。'+detail+'</div>'
+    +warnExp
+    +'<div class="chart">'+chartStacked(ct)+'</div>'
+    +'<div class="chart-cap">图　'+esc(ct.rv.label)+' 各组的「'+esc(ct.cv.label)+'」百分比堆积图（100%）</div>'
+    +'<div class="note"><b>操作对照：</b>SPSS 中勾选「卡方」得到 χ²/p，「单元格」勾选「行」「列」得到百分比。本表结论句可直接粘贴进论文的实证分析部分。</div>';
+}
+
+/* ---------- 8. 渲染：图表 ---------- */
+var chartType="bar";
+function renderChart(){
+  var a=document.getElementById("chartVarA").value;
+  var b=document.getElementById("chartVarB").value;
+  var out=document.getElementById("chartOut");
+  var cap=document.getElementById("chartCap");
+  var fA=document.getElementById("fVarA"), fB=document.getElementById("fVarB");
+  var html="",caption="";
+
+  if(chartType==="radar"){ fA.style.display="none"; fB.style.display="none"; }
+  else if(chartType==="bar"||chartType==="donut"){ fA.style.display=""; fB.style.display="none"; fA.querySelector("label").textContent="变量 A"; }
+  else if(chartType==="stack"){ fA.style.display=""; fB.style.display=""; fA.querySelector("label").textContent="行变量（分类）"; fB.querySelector("label").textContent="列变量（分类）"; }
+  else if(chartType==="box"){ fA.style.display=""; fB.style.display=""; fA.querySelector("label").textContent="量表变量（数值）"; fB.querySelector("label").textContent="分组变量"; }
+
+  if(chartType==="bar"){
+    var key=a;
+    if(key==="__channel__"){ var f=multiFreq(); html=chartBar(f.rows.map(function(r){return {label:r.cat,value:r.n};})); caption="柱状图 · 信息渠道（多选题）各选项频数"; }
+    else if(VARS[key]){ var ff=freqTable(key); html=chartBar(ff.rows.map(function(r){return {label:r.cat,value:r.n};})); caption="柱状图 · "+VARS[key].label+" 频数分布"; out.innerHTML=html; cap.textContent=caption; return; }
+    else { var d=descriptives(key); html=chartBar(d.dist.map(function(x){return {label:x.v+"分",value:x.n};})); caption="柱状图 · "+SCALE_VARS[key].label+" 各取值频数"; }
+  } else if(chartType==="donut"){
+    var key=a;
+    if(key==="__channel__"){ html=""; caption="环形图不适用于多选题，建议改用柱状图"; }
+    else if(VARS[key]){ var ff=freqTable(key); html=chartDonut(ff.rows.map(function(r){return {label:r.cat,value:r.n};})); caption="环形图 · "+VARS[key].label+" 构成"; }
+    else { html=""; caption="环形图适用于定类/定序变量，请为「变量 A」选择一个分类变量"; }
+  } else if(chartType==="stack"){
+    if(!VARS[a]||!VARS[b]){ html='<div class="note warn">堆积百分比图需要两个分类变量（人口学或分组变量），请把「变量 A」换成分类变量。</div>'; caption=""; }
+    else if(a===b){ html='<div class="note warn">行变量与列变量相同，请更换其中一个。</div>'; caption=""; }
+    else { var ct=crosstab(a,b); html=chartStacked(ct); caption="堆积百分比图 · "+ct.rv.label+" × "+ct.cv.label; }
+  } else if(chartType==="radar"){
+    html=chartRadar(); caption="雷达图 · 四个维度的均值（满分 5 分）";
+  } else if(chartType==="box"){
+    var sk=b; // 分组变量
+    var scaleKey=a;
+    if(!SCALE_VARS[scaleKey]){ scaleKey="cog"; document.getElementById("chartVarA").value=scaleKey; }
+    if(sk==="__channel__"||!VARS[sk]){ sk="area"; document.getElementById("chartVarB").value="area"; }
+    {
+      var cv=VARS[sk];
+      var groups=cv.cats.map(function(c){
+        var vals=rows.filter(function(r){return cv.get(r)===c;}).map(function(r){return SCALE_VARS[scaleKey].get(r);});
+        return {label:c,values:vals};
+      }).filter(function(g){return g.values.length>0;});
+      html=chartBox(groups); caption="箱线图 · "+SCALE_VARS[scaleKey].label+" 在「"+cv.label+"」各组中的分布";
+    }
+  }
+  out.innerHTML=html?('<div class="chart">'+html+'</div>'):html;
+  cap.textContent=caption;
+}
+
+/* ---------- 9. 初始化与事件 ---------- */
+function opt(v,label){ return '<option value="'+v+'">'+esc(label)+'</option>'; }
+function fillVars(sel,includeScale,includeMulti){
+  var h="";
+  Object.keys(VARS).forEach(function(k){ h+=opt(k,VARS[k].label); });
+  if(includeMulti) h+=opt("__channel__","信息渠道（多选）");
+  if(includeScale){ h+='<optgroup label="量表变量">'; Object.keys(SCALE_VARS).forEach(function(k){ h+=opt(k,SCALE_VARS[k].label); }); h+='</optgroup>'; }
+  sel.innerHTML=h;
+}
+
+(function init(){
+  // 信度表
+  var ab=document.getElementById("alphaBody");
+  DIMS.forEach(function(d){
+    var c=cronbach(d);
+    var judge=c.alpha>=0.9?"极佳":(c.alpha>=0.8?"良好":(c.alpha>=0.7?"可接受":(c.alpha>=0.6?"勉强可用":"需修订")));
+    var pill=c.alpha>=0.7?"hi":"lo";
+    ab.innerHTML+='<tr><td class="dim">'+d.label+'</td><td class="num-cell">'+c.k+'</td><td class="num-cell" style="font-weight:700">'+f3(c.alpha)+'</td>'
+      +'<td>'+d.items.map(function(it){return esc(it.k);}).join("、")+'</td>'
+      +'<td><span class="pill '+pill+'">'+judge+'</span></td></tr>';
+  });
+
+  // 描述统计选择器
+  var dv=document.getElementById("descVar");
+  fillVars(dv,true,true);
+  dv.value="gender";
+  document.getElementById("descMode").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b)return;
+    Array.prototype.forEach.call(this.children,function(x){x.classList.remove("on");});
+    b.classList.add("on"); descState.mode=b.dataset.m; renderDesc();
+  });
+
+  // 交叉分析选择器
+  var rv=document.getElementById("rowVar"), cvv=document.getElementById("colVar");
+  fillVars(rv,false,false); fillVars(cvv,false,false);
+  rv.value="edu"; cvv.value="wilLevel";
+  document.getElementById("cellMode").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b)return;
+    Array.prototype.forEach.call(this.children,function(x){x.classList.remove("on");});
+    b.classList.add("on"); cellMode=b.dataset.m; renderCross();
+  });
+
+  // 图表选择器
+  var ca=document.getElementById("chartVarA"), cb=document.getElementById("chartVarB");
+  fillVars(ca,true,true); fillVars(cb,false,false);
+  ca.value="gender"; cb.value="area";
+  document.getElementById("chartType").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b)return;
+    Array.prototype.forEach.call(this.children,function(x){x.classList.remove("on");});
+    b.classList.add("on"); chartType=b.dataset.t; renderChart();
+  });
+
+  // 绑定
+  dv.addEventListener("change",renderDesc);
+  rv.addEventListener("change",renderCross);
+  cvv.addEventListener("change",renderCross);
+  ca.addEventListener("change",renderChart);
+  cb.addEventListener("change",renderChart);
+
+  // 首屏渲染
+  renderDesc(); renderCross(); renderChart();
+})();
+
+})();
+</script>
+</body>
+</html>
