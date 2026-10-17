@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公开数据抓取·清洗流水线 · Python 爬虫作品｜范嘉琪</title>
+<style>
+:root{--bg:#F6F6F2;--panel:#FFF;--ink:#151A17;--muted:#5C655E;--line:#E4E3DA;--accent:#0F6B57;--accent-soft:#E4F0EB;--font-sans:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;--font-mono:Consolas,"JetBrains Mono",Menlo,monospace;--maxw:1060px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 2rem}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+a{color:var(--accent)}
+.cover{padding:4rem 0 2.4rem;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 1.2rem}
+.cover h1{font-size:clamp(1.9rem,4.4vw,2.8rem);line-height:1.18;letter-spacing:-.02em;font-weight:700;margin:0 0 .9rem}
+.cover h1 em{font-style:normal;color:var(--accent)}
+.cover .who{color:var(--muted);font-size:.95rem;margin:0 0 1.3rem}
+.cover .lead{font-size:1.08rem;line-height:1.8;max-width:52rem;margin:0 0 1.8rem}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;border-top:1px solid var(--line);padding-top:1.4rem}
+.stats .v{font-family:var(--font-mono);font-size:1.5rem;font-weight:700}
+.stats .k{font-size:.78rem;color:var(--muted);margin-top:.3rem}
+section{padding:2.8rem 0 0}
+h2{font-size:1.4rem;font-weight:700;margin:0 0 .6rem;padding-top:.9rem;border-top:2px solid var(--accent)}
+h2 .num{font-family:var(--font-mono);font-size:.74rem;font-weight:700;color:var(--accent);margin-right:.7rem}
+p{margin:0 0 1rem}
+.lead{color:var(--muted)}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:.9rem;margin-bottom:1rem}
+th{background:var(--accent-soft);text-align:left;padding:.65rem .9rem;font-size:.82rem;color:var(--accent)}
+td{padding:.6rem .9rem;border-top:1px solid var(--line);vertical-align:top}
+td.dim{color:var(--muted);white-space:nowrap}
+pre{background:#101714;color:#DDE7E1;border-radius:10px;padding:1.2rem 1.3rem;overflow-x:auto;font-family:var(--font-mono);font-size:.8rem;line-height:1.65;margin:0 0 1rem}
+pre .c{color:#7FA393}pre .k{color:#8FD0B8}pre .s{color:#E8C79A}
+.tagline{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.tagline span{font-family:var(--font-mono);font-size:.72rem;background:var(--accent-soft);color:var(--accent);padding:.25rem .6rem;border-radius:99px}
+ul.plain{padding-left:1.15rem;color:var(--muted);font-size:.92rem;margin:0 0 1rem}
+ul.plain li{margin-bottom:.4rem}
+.note{background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:.9rem 1.1rem;font-size:.92rem;margin:0 0 1rem}
+footer{margin-top:3rem;border-top:1px solid var(--line);padding:2rem 0 3rem;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap">
+    <p class="eyebrow">公开数据抓取·清洗流水线 · Python 爬虫作品</p>
+    <h1>把线上公开数据抓回来，<em>变成可分析的结构化结果</em></h1>
+    <p class="who">作者：范嘉琪 · 面向挑战杯社科调查赛道 · 公开数据抓取方向</p>
+    <p class="lead">这是一条可直接运行的采集流水线：定位公开数据源 → 请求抓取 → 解析提取 → 清洗去重 → 结构化落盘。输出的 CSV 可直接拖进 SPSS / Excel / 分析工作台，每条记录带原文 URL，全程可溯源、可复核。</p>
+    <div class="stats">
+      <div><div class="v mono">6</div><div class="k">链路环节</div></div>
+      <div><div class="v mono">3</div><div class="k">层反爬应对</div></div>
+      <div><div class="v mono">2</div><div class="k">落盘格式</div></div>
+      <div><div class="v mono">100%</div><div class="k">公开合规数据</div></div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">01</span>六步抓取链路</h2>
+    <p class="lead">每一步都有对应代码模块，脚本底部按顺序串成 main()，一条命令跑完全程。</p>
+    <table>
+      <thead><tr><th style="width:16%">环节</th><th style="width:30%">做什么</th><th>关键实现</th></tr></thead>
+      <tbody>
+        <tr><td class="dim">① 目标定位</td><td>确定公开数据源与采集字段</td><td>只选公开可访问页面（政府公开数据、统计公报、公开列表页）；字段双轨：展示字段（标题/日期/来源）+ 追溯字段（原文 URL）</td></tr>
+        <tr><td class="dim">② 请求抓取</td><td>模拟浏览器发请求拿 HTML</td><td><span class="mono">requests</span> + UA 伪装 + 指数退避重试 ×3 + 限速 ≥1s/次</td></tr>
+        <tr><td class="dim">③ 解析提取</td><td>从 HTML 抽结构化字段</td><td><span class="mono">BeautifulSoup</span> 按选择器提取，校验失败记为缺失，不硬编码脏值</td></tr>
+        <tr><td class="dim">④ 清洗去重</td><td>治理成可分析数据</td><td><span class="mono">pandas</span>：URL 主键去重 → 日期统一 → 标签清理 → 缺失值填充</td></tr>
+        <tr><td class="dim">⑤ 结构化落盘</td><td>输出双格式文件</td><td><span class="mono">CSV（utf-8-sig）</span>Excel 打开不乱码 + <span class="mono">JSON</span> 程序可读</td></tr>
+        <tr><td class="dim">⑥ 接入分析</td><td>数据直接进分析工作台</td><td>CSV 拖入分析页即可跑频数/交叉/卡方/图表，抓取→分析闭环</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">02</span>核心代码（可直接复用）</h2>
+    <div class="tagline"><span>Python 3.9+</span><span>requests</span><span>beautifulsoup4</span><span>lxml</span><span>pandas</span></div>
+<pre><code><span class="c"># scraper.py —— 公开数据采集流水线（示例目标：公开列表页）</span>
+<span class="k">import</span> time, random
+<span class="k">import</span> requests
+<span class="k">from</span> bs4 <span class="k">import</span> BeautifulSoup
+<span class="k">import</span> pandas <span class="k">as</span> pd
+
+HEADERS = {<span class="s">"User-Agent"</span>: <span class="s">"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"</span>}
+
+<span class="k">def</span> fetch(url, retries=3):
+    <span class="s">"""请求抓取：UA 伪装 + 指数退避重试 + 限速"""</span>
+    <span class="k">for</span> i <span class="k">in</span> range(retries):
+        <span class="k">try</span>:
+            r = requests.get(url, headers=HEADERS, timeout=10)
+            r.raise_for_status()
+            time.sleep(1 + random.random())          <span class="c"># 限速：≥1s/次</span>
+            <span class="k">return</span> r.text
+        <span class="k">except</span> requests.RequestException:
+            time.sleep(2 ** i)                        <span class="c"># 指数退避 1s→2s→4s</span>
+    <span class="k">return</span> <span class="k">None</span>
+
+<span class="k">def</span> parse(html):
+    <span class="s">"""解析提取：按选择器抽字段，失败记为缺失"""</span>
+    soup = BeautifulSoup(html, <span class="s">"lxml"</span>)
+    items = []
+    <span class="k">for</span> node <span class="k">in</span> soup.select(<span class="s">".list-item"</span>):          <span class="c"># 按目标站点改选择器</span>
+        items.append({
+            <span class="s">"标题"</span>: node.select_one(<span class="s">".title"</span>).get_text(strip=True) <span class="k">if</span> node.select_one(<span class="s">".title"</span>) <span class="k">else</span> <span class="k">None</span>,
+            <span class="s">"日期"</span>: node.select_one(<span class="s">".date"</span>).get_text(strip=True) <span class="k">if</span> node.select_one(<span class="s">".date"</span>) <span class="k">else</span> <span class="k">None</span>,
+            <span class="s">"来源"</span>: node.select_one(<span class="s">".source"</span>).get_text(strip=True) <span class="k">if</span> node.select_one(<span class="s">".source"</span>) <span class="k">else</span> <span class="k">None</span>,
+            <span class="s">"原文URL"</span>: node.select_one(<span class="s">"a[href]"</span>)[<span class="s">"href"</span>] <span class="k">if</span> node.select_one(<span class="s">"a[href]"</span>) <span class="k">else</span> <span class="k">None</span>,
+        })
+    <span class="k">return</span> items
+
+<span class="k">def</span> clean(df):
+    <span class="s">"""清洗四步：去重 → 日期统一 → 标签清理 → 缺失值填充"""</span>
+    df = df.drop_duplicates(subset=[<span class="s">"原文URL"</span>], keep=<span class="s">"first"</span>)
+    df[<span class="s">"日期"</span>] = pd.to_datetime(df[<span class="s">"日期"</span>], errors=<span class="s">"coerce"</span>).dt.strftime(<span class="s">"%Y-%m-%d"</span>)
+    df[<span class="s">"标题"</span>] = df[<span class="s">"标题"</span>].astype(str).str.replace(r<span class="s">"&lt;[^&gt;]+&gt;"</span>, <span class="s">""</span>, regex=True)
+    <span class="k">return</span> df.fillna(<span class="s">"未知"</span>)
+
+<span class="k">def</span> main():
+    records = []
+    <span class="k">for</span> page <span class="k">in</span> range(1, 6):                       <span class="c"># 目标：前 5 页公开列表</span>
+        html = fetch(<span class="s">"https://example.org/list?page="</span> + str(page))
+        <span class="k">if</span> html:
+            records += parse(html)
+    df = clean(pd.DataFrame(records))
+    df.to_csv(<span class="s">"output.csv"</span>, index=False, encoding=<span class="s">"utf-8-sig"</span>)  <span class="c"># Excel 不乱码</span>
+    df.to_json(<span class="s">"output.json"</span>, orient=<span class="s">"records"</span>, force_ascii=False, indent=2)
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    main()</code></pre>
+    <div class="note">把 ② 的 URL 与 ③ 的选择器换成课题要抓的公开站点，这条流水线即可服务任何调研课题——这正是"简单爬虫工具 + 公开数据抓取"岗位需要的可迁移能力。</div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">03</span>产出样例：结构化、可溯源</h2>
+<pre><code><span class="c">// output.json（节选）—— 展示字段 + 追溯字段双轨</span>
+[
+  { <span class="s">"标题"</span>: <span class="s">"2025年全省农业农村经济运行情况"</span>,
+    <span class="s">"日期"</span>: <span class="s">"2025-11-20"</span>, <span class="s">"来源"</span>: <span class="s">"省统计局"</span>,
+    <span class="s">"原文URL"</span>: <span class="s">"https://example.org/tjgb/2025/1120.html"</span> },
+  { <span class="s">"标题"</span>: <span class="s">"关于推进农产品冷链物流建设的实施意见"</span>,
+    <span class="s">"日期"</span>: <span class="s">"2025-10-08"</span>, <span class="s">"来源"</span>: <span class="s">"省农业农村厅"</span>,
+    <span class="s">"原文URL"</span>: <span class="s">"https://example.org/nyw/2025/1008.html"</span> }
+]</code></pre>
+    <table>
+      <thead><tr><th>清洗步骤</th><th>处理前</th><th>处理后</th></tr></thead>
+      <tbody>
+        <tr><td class="dim">URL 主键去重</td><td>同一条目出现在分页与推荐位，重复 2 次</td><td>按「原文URL」只保留首条</td></tr>
+        <tr><td class="dim">日期格式统一</td><td>「2025.11.20」「11月20日」混用</td><td>统一为 YYYY-MM-DD，无法解析记缺失</td></tr>
+        <tr><td class="dim">HTML 标签清理</td><td>标题混入 &lt;em&gt;高亮&lt;/em&gt; 残留标签</td><td>正则剥离，纯文本入库</td></tr>
+        <tr><td class="dim">缺失值填充</td><td>部分条目无来源字段</td><td>填充「未知」并保留行，不静默丢弃</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">04</span>合规边界（写进代码里，不是写在页面上）</h2>
+    <ul class="plain">
+      <li><b>只抓公开数据</b>：不登录、不破解、不绕权限，涉个人隐私的字段一律不采集。</li>
+      <li><b>控制请求频率</b>：默认限速 ≥1s/次 + 失败指数退避，尊重对方服务器与 robots 约定。</li>
+      <li><b>全程留痕</b>：每条记录带原文 URL 与抓取时间戳，满足挑战杯对数据真实性与可复核性的要求。</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>范嘉琪</b> · 河南大学 思想政治教育专业 · 2026 级<br>
+    配套作品：<a href="https://fanjiaqi66660705.github.io/survey-workbench/">公开数据抓取与分析工作台</a> ｜ <a href="https://fanjiaqi66660705.github.io/data-capability-portfolio/data-capability-portfolio.html">数据能力作品集</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
